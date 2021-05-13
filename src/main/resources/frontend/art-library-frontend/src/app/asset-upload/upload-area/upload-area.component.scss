@@ -1,0 +1,20 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  max-width: 100%;
+  min-height: 200px;
+  max-height: 200px;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  text-align: center;
+  border-style: dashed;
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+}
