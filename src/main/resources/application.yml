@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    hibernate:
+      # use update to keep the database during start, use create-drop to empty the database during startup
+      ddl-auto: update
+      # ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/art_library_backend"
+    username: art_library_backend
+    password: hdr4Z%D3kSa-Edag
+    initialization-mode: always
+  server:
+    servlet:
+      session:
+        cookie:
+          http-only: true
+          secure: true
