@@ -1,24 +1,22 @@
 package de.naresea.art_library_backend.model.entity;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
+import java.util.Collections;
 import java.util.Set;
 
 @Entity
 @Table(name = "image_files")
 @NoArgsConstructor
-@Data
+@AllArgsConstructor
+@Getter
+@Setter
 public class ImageFile {
-
-    public ImageFile(String name, String type, byte[] picByte) {
-        this.name = name;
-        this.type = type;
-        this.picByte = picByte;
-    }
 
     @Id
     @Column(name = "id")
@@ -31,16 +29,45 @@ public class ImageFile {
     @Column(name = "type")
     private String type;
 
+    @Column(name = "category")
+    private String category;
+
+    /* Hash of the original image file (not the converted webp in the database) to avoid duplicate uploads */
+    @Column(name = "imagehash", unique = true, nullable = false)
+    private String imagehash;
+
     @ManyToMany
     @JoinTable(
             name = "image_image_tag",
             joinColumns = @JoinColumn(name = "image_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
-    private Set<ImageTag> tags;
+    private Set<ImageTag> tags = Collections.emptySet();
 
     @Lob
     @Type(type = "org.hibernate.type.BinaryType")
     @Column(name = "picByte")
     private byte[] picByte;
+
+
+    @Lob
+    @Type(type = "org.hibernate.type.BinaryType")
+    @Column(name = "thumb_small")
+    private byte[] thumbnailSmall;
+
+    @Lob
+    @Type(type = "org.hibernate.type.BinaryType")
+    @Column(name = "thumb_medium")
+    private byte[] thumbnailMedium;
+
+    @Lob
+    @Type(type = "org.hibernate.type.BinaryType")
+    @Column(name = "thumb_big")
+    private byte[] thumbnailBig;
+
+    public ImageFile(String name, String type, byte[] picByte) {
+        this.name = name;
+        this.type = type;
+        this.picByte = picByte;
+    }
 }

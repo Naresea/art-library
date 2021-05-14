@@ -1,15 +1,17 @@
 package de.naresea.art_library_backend.model.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
+import java.util.Collections;
 import java.util.Set;
 
 @Entity
+@AllArgsConstructor
 @NoArgsConstructor
-@Data
 @Table(name = "image_tags")
+@Getter
+@Setter
 public class ImageTag {
 
     @Id
@@ -21,5 +23,9 @@ public class ImageTag {
     private String name;
 
     @ManyToMany(mappedBy = "tags")
-    Set<ImageFile> images;
+    Set<ImageFile> images = Collections.emptySet();
+
+    public ImageTag(String name) {
+        this.name = name;
+    }
 }

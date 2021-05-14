@@ -1,17 +1,23 @@
 package de.naresea.art_library_backend.controller;
 
+import de.naresea.art_library_backend.model.dto.ImageDto;
+import de.naresea.art_library_backend.model.dto.UploadResultDto;
 import de.naresea.art_library_backend.model.entity.ImageFile;
 import de.naresea.art_library_backend.model.repository.ImageRepository;
-import net.lingala.zip4j.ZipFile;
+import de.naresea.art_library_backend.service.ImageImportService;
+import de.naresea.art_library_backend.service.ProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.*;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -21,68 +27,82 @@ public class ImageController {
     @Autowired
     ImageRepository imageRepository;
 
+    @Autowired
+    private ImageImportService imageImportService;
+
     @PostMapping("/upload")
-    public void uploadImage(@RequestParam("imageFiles") MultipartFile file) throws IOException {
-        System.out.println("Original Image Byte Size - " + file.getSize());
-
-        var tempFile = new File("./tmp/temp.zip");
-        InputStream initialStream = file.getInputStream();
-        byte[] buffer = new byte[initialStream.available()];
-        initialStream.read(buffer);
-
-        try (OutputStream os = new FileOutputStream(tempFile)) {
-            os.write(buffer);
-        }
-
-        var zipFile = new ZipFile(tempFile);
-        zipFile.extractAll("./tmp/extract");
-        /*ImageFile img = new ImageFile(file.getOriginalFilename(), file.getContentType(),
-                compressBytes(file.getBytes()));
-        var result = imageRepository.save(img);
-        System.out.println("Save is done, result = " + result.getName());*/
+    public UploadResultDto uploadImage(@RequestParam("imageFiles") MultipartFile file) {
+        var uuid = this.imageImportService.importMultipartImageZip(file);
+        return new UploadResultDto(uuid);
     }
 
-    @GetMapping(path = { "/get/{imageName}" })
-    public ImageFile getImage(@PathVariable("imageName") String imageName) throws IOException {
-        final Optional<ImageFile> retrievedImage = imageRepository.findByName(imageName);
-        ImageFile img = new ImageFile(retrievedImage.get().getName(), retrievedImage.get().getType(),
-                decompressBytes(retrievedImage.get().getPicByte()));
-        return img;
-    }
-    // compress the image bytes before storing it in the database
-    public static byte[] compressBytes(byte[] data) {
-        Deflater deflater = new Deflater();
-        deflater.setInput(data);
-        deflater.finish();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        byte[] buffer = new byte[1024];
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buffer);
-            outputStream.write(buffer, 0, count);
-        }
-        try {
-            outputStream.close();
-        } catch (IOException e) {
-        }
-        System.out.println("Compressed Image Byte Size - " + outputStream.toByteArray().length);
-        return outputStream.toByteArray();
-    }
-    // uncompress the image bytes before returning it to the angular application
-    public static byte[] decompressBytes(byte[] data) {
-        Inflater inflater = new Inflater();
-        inflater.setInput(data);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        byte[] buffer = new byte[1024];
-        try {
-            while (!inflater.finished()) {
-                int count = inflater.inflate(buffer);
-                outputStream.write(buffer, 0, count);
-            }
-            outputStream.close();
-        } catch (IOException ioe) {
-        } catch (DataFormatException e) {
-        }
-        return outputStream.toByteArray();
+    @GetMapping("/upload/{uuid}")
+    public ProgressService.ProgressReport getUploadProgress(@RequestParam("uuid") String uuid) {
+        return ProgressService.getProgress(uuid)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    @GetMapping(params = { "page", "size" })
+    public Page<ImageDto> getImages(@RequestParam("page") int page, @RequestParam("size") int size) {
+        var actualPageSize = Math.min(size, 100);
+        var pageable = PageRequest.of(page, actualPageSize);
+        return this.imageRepository.findAll(pageable).map(ImageDto::new);
+    }
+
+    @GetMapping(path = {"/search"}, params = {  "page", "size", "tags", "query" })
+    public Page<ImageDto> getImagesByTags(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestParam("tags") String[] tags,
+            @RequestParam("query") String query
+    ) {
+        var actualPageSize = Math.min(size, 100);
+        var pageable = PageRequest.of(page, actualPageSize);
+        if (query.equals("any")) {
+            return this.imageRepository.findByTags_NameIn(Arrays.asList(tags), pageable)
+                    .map(ImageDto::new);
+        }
+        if (query.equals("all")) {
+            return this.imageRepository.findByHasAllTags(Arrays.asList(tags), (long) tags.length, pageable)
+                    .map(ImageDto::new);
+        }
+        if (query.equals("exact")) {
+            return this.imageRepository.findByHasOnlyAllTags(Arrays.asList(tags), (long) tags.length, pageable)
+                    .map(ImageDto::new);
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(path = { "/{imageId}" })
+    public ImageDto getImage(@PathVariable("imageId") Long imageId) {
+        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
+        if (retrievedImage.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var img = retrievedImage.get();
+        return new ImageDto(img);
+    }
+
+    @GetMapping(path = {"/{imageId}/bin/{size}"})
+    public void getBinaryContent(@PathVariable("imageId") Long imageId, @PathVariable("size") String size, HttpServletResponse response) throws IOException {
+        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
+        if (retrievedImage.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var img = retrievedImage.get();
+        var data = size.equals("small")
+                ? img.getThumbnailSmall()
+                : size.equals("medium")
+                ? img.getThumbnailMedium()
+                : size.equals("big")
+                ? img.getThumbnailBig()
+                : size.equals("raw")
+                ? img.getPicByte()
+                : null;
+        if (data == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Valid sizes: small, medium, big, raw");
+        }
+        response.setContentType("image/webp");
+        response.getOutputStream().write(data);
+    }
 }
