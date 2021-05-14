@@ -1,16 +1,16 @@
-<div class="d-flex h-100 w-100 flex-column p-4">
+<div class="d-flex h-100 w-100 flex-column p-4" *ngIf="!(isUploading$$ | async); else uploadTemplate">
   <h1>Asset Upload</h1>
   <app-upload-area class="flex-grow-1 mb-2" (filesSelected)="handleFileSelection($event)"></app-upload-area>
   <ng-container *ngIf="files$$ | async as files">
     <ng-container *ngIf="files.length; else noFiles">
       <app-file-grid class="flex-grow-1 mb-2" [files]="files" (uploadFilesSelected)="handleUploadFileSelection($event)"></app-file-grid>
       <div class="d-flex justify-content-between">
-        <button class="btn btn-danger">Clear</button>
+        <button class="btn btn-danger" (click)="clear()">Clear</button>
         <ng-container *ngIf="uploadMetadata$ | async as meta">
           <span class="d-block">{{meta.numFiles}} Files to upload</span>
           <span class="d-block">{{meta.totalSize}}</span>
         </ng-container>
-        <button class="btn btn-primary">Upload</button>
+        <button class="btn btn-primary" (click)="upload()">Upload</button>
       </div>
     </ng-container>
   </ng-container>
@@ -20,3 +20,12 @@
     </div>
   </ng-template>
 </div>
+
+<ng-template #uploadTemplate>
+  Uploading... please wait.
+  <div *ngIf="zipProgress$$ | async as progress">
+    <div>{{progress.progress}}</div>
+    <div>{{progress.file}}</div>
+    <button class="btn btn-danger" (click)="cancelUpload$$.next(); isUploading$$.next(false);">Cancel</button>
+  </div>
+</ng-template>

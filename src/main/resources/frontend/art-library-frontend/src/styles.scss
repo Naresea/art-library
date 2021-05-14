@@ -10,3 +10,8 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
+.tag-selected {
+  background-color: $primary;
+  color: $white;
+}

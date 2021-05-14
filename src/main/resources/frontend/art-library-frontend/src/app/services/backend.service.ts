@@ -2,9 +2,11 @@ import {Injectable} from '@angular/core';
 import {HttpClient, HttpEvent, HttpEventType, HttpProgressEvent, HttpResponse} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {filter, map, startWith} from "rxjs/operators";
-import {Transfer, TransferState} from "./backend.model";
+import {Transfer, TransferState} from "../models/backend.model";
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class BackendService {
 
   constructor(private readonly httpClient: HttpClient) { }

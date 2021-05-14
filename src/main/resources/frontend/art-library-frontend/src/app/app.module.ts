@@ -3,8 +3,8 @@ import {BrowserModule} from '@angular/platform-browser';
 
 import {AppComponent} from './app.component';
 import {AppRoutingModule} from "./app-routing.module";
-import {BackendCommunicationModule} from "./backend-communication/backend-communication.module";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
+import {HttpClientModule, HttpClientXsrfModule} from "@angular/common/http";
 
 @NgModule({
   declarations: [
@@ -14,7 +14,8 @@ import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
     AppRoutingModule,
     BrowserModule,
     FontAwesomeModule,
-    BackendCommunicationModule
+    HttpClientModule,
+    HttpClientXsrfModule.withOptions()
   ],
   providers: [],
   bootstrap: [AppComponent]

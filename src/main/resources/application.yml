@@ -1,4 +1,9 @@
 spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2048MB
+      max-request-size: 2048MB
   jpa:
     hibernate:
       # use update to keep the database during start, use create-drop to empty the database during startup
