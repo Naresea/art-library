@@ -5,6 +5,7 @@ import {AppComponent} from './app.component';
 import {AppRoutingModule} from "./app-routing.module";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {HttpClientModule, HttpClientXsrfModule} from "@angular/common/http";
+import {LazyLoadImageModule} from "ng-lazyload-image";
 
 @NgModule({
   declarations: [
@@ -15,7 +16,8 @@ import {HttpClientModule, HttpClientXsrfModule} from "@angular/common/http";
     BrowserModule,
     FontAwesomeModule,
     HttpClientModule,
-    HttpClientXsrfModule.withOptions()
+    HttpClientXsrfModule.withOptions(),
+    LazyLoadImageModule
   ],
   providers: [],
   bootstrap: [AppComponent]

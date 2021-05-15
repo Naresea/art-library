@@ -1,0 +1,25 @@
+<div #scrollwindow (scroll)="updateScroll()" class="scrollwindow d-flex w-100 h-100 overflow-auto">
+  <div #scrollpane class="scrollpane w-100"></div>
+</div>
+
+<ng-container *ngFor="let rowIdx of (domRows$$ | async)">
+  <ng-container *ngIf="rowData$$ | async as rowData">
+    <div class="scrollrow d-flex justify-content-around"
+         [style.min-height]="thumbSize + 'px'"
+         [style.max-height]="thumbSize + 'px'"
+         [style.top]="rowData.transforms[rowIdx]">
+      <ng-container *ngFor="let image of rowData.images[rowIdx]">
+        <div *ngIf="image; else blankimage"
+             class="scrollimage"
+             style="border: 1px solid black; cursor: pointer; width: 256px; height: 256px;"
+             (click)="downloadImage(image)">
+          <img [lazyLoad]="getImageUrl(image)"/>
+        </div>
+        <ng-template #blankimage>
+          <div style="width: 256px; height: 256px; opacity: 0;">
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+  </ng-container>
+</ng-container>

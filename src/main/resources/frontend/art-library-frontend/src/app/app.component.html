@@ -1,0 +1,19 @@
+<nav style="max-height: 88px; min-height: 88px;" class="navbar navbar-expand navbar-light bg-light p-4">
+  <a class="navbar-brand" href="#">ArtLibrary</a>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" [routerLink]="routes.browse">Browse</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [routerLink]="routes.upload">Upload</a>
+      </li>
+    </ul>
+    <form *ngIf="isInBrowse" class="form-inline my-2 my-lg-0 d-flex">
+      <input #searchbar class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" (change)="search()">
+      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+    </form>
+  </div>
+</nav>
+<router-outlet></router-outlet>

@@ -1,0 +1,23 @@
+:host {
+  position: relative !important;
+}
+
+.scrollwindow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.scrollrow {
+  position: absolute;
+  will-change: top;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.scrollimage {
+  pointer-events: all;
+}

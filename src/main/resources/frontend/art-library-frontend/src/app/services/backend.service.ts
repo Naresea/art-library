@@ -74,7 +74,8 @@ export class BackendService {
         } else if (this.isHttpResponse(evt)) {
           return {
             progress: 100,
-            state: TransferState.DONE
+            state: TransferState.DONE,
+            result: evt.body ?? undefined
           };
         } else {
           return undefined;
