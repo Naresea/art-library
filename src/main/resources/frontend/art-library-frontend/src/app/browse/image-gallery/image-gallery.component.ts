@@ -52,46 +52,17 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   public set imagePage(pg: Page<ImageMetadata>) {
     if (pg) {
       if (this.mActivePage === 'top') {
+        this.mBottomPage = this.mTopPage;
+        this.mTopPage = pg;
+        console.log('Setting top page.', {top: this.mTopPage, bot: this.mBottomPage});
+      } else if (this.mActivePage === 'bottom') {
+        this.mTopPage = this.mBottomPage ?? this.mTopPage;
         this.mBottomPage = pg;
+        console.log('Setting bottom page.', {top: this.mTopPage, bot: this.mBottomPage});
       } else {
         this.mTopPage = pg;
       }
     }
-  }
-
-  private getImagesForRange(startIdx: number, endIdx: number): Array<ImageMetadata> {
-    if (!this.mTopPage) {
-      return [];
-    }
-    const pageBaseIdx = this.mTopPage.number * this.mTopPage.size;
-    if (startIdx < pageBaseIdx) {
-      this.mActivePage = 'top';
-      this.prevPage.emit();
-      return [];
-    }
-
-    const maxPage = (this.mBottomPage ?? this.mTopPage);
-    const maxPageIdx = maxPage.number * maxPage.size + maxPage.numberOfElements;
-    if (endIdx > maxPageIdx) {
-      this.mActivePage = 'bottom';
-      this.nextPage.emit();
-      return [];
-    }
-    const start = startIdx - pageBaseIdx;
-    const end = maxPageIdx - endIdx;
-
-
-    const result: Array<ImageMetadata> = [];
-    for (let i = start; i < this.mTopPage.content.length && i < end; i++) {
-      result.push(this.mTopPage.content[i]);
-    }
-    const added = result.length;
-    if (this.mBottomPage) {
-      for (let i = 0; i < (end - added); i++) {
-        result.push(this.mBottomPage.content[i]);
-      }
-    }
-    return result;
   }
 
   @Input()
@@ -135,6 +106,8 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private readonly rowTransforms$$ = new ReplaySubject<Record<number, string>>(1);
   private readonly rowImages$$ = new ReplaySubject<Record<number, Array<ImageMetadata>>>(1);
+  private readonly nextPage$$ = new Subject<void>();
+  private readonly prevPage$$ = new Subject<void>();
   public readonly domRows$$ = new ReplaySubject<Array<number>>(1);
   public readonly rowData$$ = combineLatest([this.rowTransforms$$, this.rowImages$$])
     .pipe(map(([transforms, images]) => ({transforms, images})));
@@ -157,6 +130,18 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
       takeUntil(this.destroy$$)
     ).subscribe(() => {
       this.recalculateDomElementsImpl();
+    });
+    this.nextPage$$.pipe(
+      debounceTime(50)
+    ).subscribe(() => {
+      console.log('Requesting next page', {top: this.mTopPage, bot: this.mBottomPage, act: this.mActivePage});
+      this.nextPage.emit();
+    });
+    this.prevPage$$.pipe(
+      debounceTime(50)
+    ).subscribe(() => {
+      console.log('Requesting prev page', {top: this.mTopPage, bot: this.mBottomPage, act: this.mActivePage});
+      this.prevPage.emit();
     });
   }
 
@@ -223,6 +208,33 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     return images;*/
     return this.getImagesForRange(startIdx, endIdx);
+  }
+
+  private getImagesForRange(startIdx: number, endIdx: number): Array<ImageMetadata> {
+    if (!this.mTopPage) {
+      return [];
+    }
+    const pageBaseIdx = this.mTopPage.number * this.mTopPage.size;
+    if (startIdx < pageBaseIdx) {
+      this.mActivePage = 'top';
+      this.prevPage$$.next();
+      return [];
+    }
+
+    const maxPage = (this.mBottomPage ?? this.mTopPage);
+    const maxPageIdx = maxPage.number * maxPage.size + maxPage.numberOfElements;
+    if (endIdx > maxPageIdx) {
+      this.mActivePage = 'bottom';
+      this.nextPage$$.next();
+      return [];
+    }
+
+    const result: Array<ImageMetadata> = [];
+    const raw = [...this.mTopPage.content, ...(this.mBottomPage?.content) ?? []];
+    for (let i = startIdx - pageBaseIdx; i < endIdx - pageBaseIdx; i++) {
+      result.push(raw[i]);
+    }
+    return result;
   }
 
   private recalculateDomElements(): void {

@@ -19,7 +19,7 @@ export class ImageService implements OnDestroy {
   private readonly destroy$$ = new Subject<void>();
   private readonly images$$ = new ReplaySubject<Array<ImageMetadata>>(1);
   private readonly imagePage$$ = new ReplaySubject<Page<ImageMetadata>>(1);
-  private pageSize = 100;
+  private pageSize = 50;
   private page = 0;
   private tags: Array<string> = [];
   private isFirstPage = true;
@@ -59,6 +59,11 @@ export class ImageService implements OnDestroy {
       return;
     }
     this.page--;
+    this.searchImpl(this.query, ...this.tags);
+  }
+
+  public getPage(pageNumber: number): void {
+    this.page = pageNumber;
     this.searchImpl(this.query, ...this.tags);
   }
 
