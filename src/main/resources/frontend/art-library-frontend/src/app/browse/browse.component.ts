@@ -14,11 +14,7 @@ export class BrowseComponent {
   constructor(private readonly imageService: ImageService) { }
 
 
-  public nextPage(): void {
-    this.imageService.nextPage();
-  }
-
-  public prevPage(): void {
-    this.imageService.prevPage();
+  public getPage(pageIdx: number): void {
+    this.imageService.getPage(pageIdx);
   }
 }

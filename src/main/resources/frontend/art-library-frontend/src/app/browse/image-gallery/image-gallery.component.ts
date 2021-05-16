@@ -1,13 +1,14 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy, ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnDestroy,
   OnInit,
-  ViewChild,
-  EventEmitter,
-  Output
+  Output,
+  ViewChild
 } from '@angular/core';
 import {ImageMetadata, ImageSize, Page} from "../../models/image.model";
 import {ImageService} from "../../services/image.service";
@@ -17,7 +18,8 @@ import {debounceTime, map, takeUntil} from "rxjs/operators";
 @Component({
   selector: 'app-image-gallery',
   templateUrl: './image-gallery.component.html',
-  styleUrls: ['./image-gallery.component.scss']
+  styleUrls: ['./image-gallery.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
 
@@ -54,11 +56,9 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.mActivePage === 'top') {
         this.mBottomPage = this.mTopPage;
         this.mTopPage = pg;
-        console.log('Setting top page.', {top: this.mTopPage, bot: this.mBottomPage});
       } else if (this.mActivePage === 'bottom') {
         this.mTopPage = this.mBottomPage ?? this.mTopPage;
         this.mBottomPage = pg;
-        console.log('Setting bottom page.', {top: this.mTopPage, bot: this.mBottomPage});
       } else {
         this.mTopPage = pg;
       }
@@ -99,15 +99,11 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   @Output()
-  public nextPage = new EventEmitter<void>();
-
-  @Output()
-  public prevPage = new EventEmitter<void>();
+  public pageNeeded = new EventEmitter<number>();
 
   private readonly rowTransforms$$ = new ReplaySubject<Record<number, string>>(1);
   private readonly rowImages$$ = new ReplaySubject<Record<number, Array<ImageMetadata>>>(1);
-  private readonly nextPage$$ = new Subject<void>();
-  private readonly prevPage$$ = new Subject<void>();
+  private readonly pageRequest$$ = new ReplaySubject<number>();
   public readonly domRows$$ = new ReplaySubject<Array<number>>(1);
   public readonly rowData$$ = combineLatest([this.rowTransforms$$, this.rowImages$$])
     .pipe(map(([transforms, images]) => ({transforms, images})));
@@ -121,6 +117,8 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   private numRows: number = 0;
   private imagesPerRow: number = 0;
 
+  constructor(private readonly cdr: ChangeDetectorRef) { }
+
   public ngAfterViewInit(): void {
     this.recalculateDomElements();
   }
@@ -131,17 +129,10 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
     ).subscribe(() => {
       this.recalculateDomElementsImpl();
     });
-    this.nextPage$$.pipe(
+    this.pageRequest$$.pipe(
       debounceTime(50)
-    ).subscribe(() => {
-      console.log('Requesting next page', {top: this.mTopPage, bot: this.mBottomPage, act: this.mActivePage});
-      this.nextPage.emit();
-    });
-    this.prevPage$$.pipe(
-      debounceTime(50)
-    ).subscribe(() => {
-      console.log('Requesting prev page', {top: this.mTopPage, bot: this.mBottomPage, act: this.mActivePage});
-      this.prevPage.emit();
+    ).subscribe((evt) => {
+      this.pageNeeded.emit(evt);
     });
   }
 
@@ -202,11 +193,6 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
     const startIdx = finalIdx * this.imagesPerRow;
     const endIdx = startIdx + this.imagesPerRow;
 
-    /*const images: Array<ImageMetadata> = [];
-    for (let i = startIdx; i < endIdx; i++) {
-      images.push(this.images[i]);
-    }
-    return images;*/
     return this.getImagesForRange(startIdx, endIdx);
   }
 
@@ -215,17 +201,19 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
       return [];
     }
     const pageBaseIdx = this.mTopPage.number * this.mTopPage.size;
-    if (startIdx < pageBaseIdx) {
+    if (startIdx < pageBaseIdx && !this.mTopPage.first) {
       this.mActivePage = 'top';
-      this.prevPage$$.next();
+      const pageNumber = Math.floor(startIdx / this.mTopPage.size);
+      this.pageRequest$$.next(pageNumber);
       return [];
     }
 
     const maxPage = (this.mBottomPage ?? this.mTopPage);
     const maxPageIdx = maxPage.number * maxPage.size + maxPage.numberOfElements;
-    if (endIdx > maxPageIdx) {
+    if (endIdx > maxPageIdx && !maxPage.last) {
       this.mActivePage = 'bottom';
-      this.nextPage$$.next();
+      const pageNumber = Math.floor(endIdx / maxPage.size);
+      this.pageRequest$$.next(pageNumber);
       return [];
     }
 

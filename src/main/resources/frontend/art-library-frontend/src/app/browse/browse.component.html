@@ -4,8 +4,7 @@
     <app-image-gallery class="col-10"
                        [imagePage]="images"
                        [numImages]="images.totalElements"
-                       (nextPage)="nextPage()"
-                       (prevPage)="prevPage()">
+                       (pageNeeded)="getPage($event)">
     </app-image-gallery>
   </ng-container>
 </div>
