@@ -34,4 +34,8 @@ export class BrowseComponent {
   public search(evt: ImageSearch): void {
     this.imageService.search(evt.operation, evt.tags, evt.categories);
   }
+
+  public nextPage(): void {
+    this.imageService.nextPage();
+  }
 }

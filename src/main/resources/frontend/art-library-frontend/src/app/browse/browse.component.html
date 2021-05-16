@@ -8,11 +8,17 @@
     (deleteImage)="deleteImage($event)">
   </app-image-sidebar>
   <ng-container *ngIf="imagePage$ | async as images">
+    <app-image-gallery-lib class="col-10" [imagePage]="imagePage$ | async"
+                           (imageSelected)="selectedImage$$.next($event)"
+                           (nextPage)="nextPage()">
+    </app-image-gallery-lib>
+    <!--
     <app-image-gallery class="col-10"
                        [imagePage]="images"
                        [numImages]="images.totalElements"
                        (pageNeeded)="getPage($event)"
                        (imageSelected)="selectedImage$$.next($event)">
     </app-image-gallery>
+    -->
   </ng-container>
 </div>

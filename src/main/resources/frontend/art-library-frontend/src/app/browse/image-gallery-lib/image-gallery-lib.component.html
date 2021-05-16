@@ -1,0 +1,11 @@
+<div class="d-flex flex-column h-100 w-100 overflow-auto" infiniteScroll [infiniteScrollDistance]="2" [scrollWindow]="false" (scrolled)="scrolled()">
+  <ng-container *ngIf="plainConfig$$ | async as config">
+    <ks-modal-gallery [id]="0"
+                      [modalImages]="modalImages"
+                      [currentImageConfig]="{invertSwipe: true}"
+                      [plainGalleryConfig]="config"
+                      (close)="close()"
+                      (show)="handleShow($event)">
+    </ks-modal-gallery>
+  </ng-container>
+</div>

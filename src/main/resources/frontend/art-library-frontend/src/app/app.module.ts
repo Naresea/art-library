@@ -6,7 +6,9 @@ import {AppRoutingModule} from "./app-routing.module";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {HttpClientModule, HttpClientXsrfModule} from "@angular/common/http";
 import {LazyLoadImageModule} from "ng-lazyload-image";
-import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
+import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";import 'hammerjs';
+import 'mousetrap';
+import { GalleryModule } from '@ks89/angular-modal-gallery';
 
 @NgModule({
   declarations: [
@@ -19,7 +21,8 @@ import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
     HttpClientModule,
     HttpClientXsrfModule.withOptions(),
     LazyLoadImageModule,
-    NgMultiSelectDropDownModule.forRoot()
+    NgMultiSelectDropDownModule.forRoot(),
+    GalleryModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]

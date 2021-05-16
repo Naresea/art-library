@@ -9,13 +9,17 @@ import {EditorModule, TINYMCE_SCRIPT_SRC} from '@tinymce/tinymce-angular';
 import {LazyLoadImageModule} from "ng-lazyload-image";
 import {FormsModule} from "@angular/forms";
 import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
+import {GalleryModule} from "@ks89/angular-modal-gallery";
+import { ImageGalleryLibComponent } from './image-gallery-lib/image-gallery-lib.component';
+import {InfiniteScrollModule} from "ngx-infinite-scroll";
 
 
 @NgModule({
   declarations: [
     BrowseComponent,
     ImageSidebarComponent,
-    ImageGalleryComponent
+    ImageGalleryComponent,
+    ImageGalleryLibComponent
   ],
   imports: [
     CommonModule,
@@ -23,7 +27,9 @@ import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
     LazyLoadImageModule,
     EditorModule,
     FormsModule,
-    NgMultiSelectDropDownModule
+    NgMultiSelectDropDownModule,
+    GalleryModule,
+    InfiniteScrollModule
   ],
   providers: [
     {provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js'}
