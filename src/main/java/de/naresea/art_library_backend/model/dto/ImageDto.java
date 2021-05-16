@@ -14,6 +14,8 @@ public class ImageDto {
     String name;
     String type;
     String category;
+    String description;
+    String title;
     List<ImageTagDto> tags;
 
     public ImageDto(ImageFile image) {
@@ -22,5 +24,7 @@ public class ImageDto {
         this.type = image.getType();
         this.category = image.getCategory();
         this.tags = image.getTags().stream().map(ImageTagDto::new).collect(Collectors.toList());
+        this.description = image.getDescription();
+        this.title = image.getTitle();
     }
 }

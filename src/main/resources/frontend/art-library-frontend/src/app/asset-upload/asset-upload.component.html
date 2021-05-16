@@ -1,31 +1,59 @@
-<div class="d-flex h-100 w-100 flex-column p-4" *ngIf="!(isUploading$$ | async); else uploadTemplate">
-  <h1>Asset Upload</h1>
-  <app-upload-area class="flex-grow-1 mb-2" (filesSelected)="handleFileSelection($event)"></app-upload-area>
-  <ng-container *ngIf="files$$ | async as files">
-    <ng-container *ngIf="files.length; else noFiles">
-      <app-file-grid class="flex-grow-1 mb-2" [files]="files" (uploadFilesSelected)="handleUploadFileSelection($event)"></app-file-grid>
-      <div class="d-flex justify-content-between">
-        <button class="btn btn-danger" (click)="clear()">Clear</button>
-        <ng-container *ngIf="uploadMetadata$ | async as meta">
-          <span class="d-block">{{meta.numFiles}} Files to upload</span>
-          <span class="d-block">{{meta.totalSize}}</span>
-        </ng-container>
-        <button class="btn btn-primary" (click)="upload()">Upload</button>
-      </div>
-    </ng-container>
-  </ng-container>
-  <ng-template #noFiles>
-    <div class="flex-grow-1 d-flex flex-row align-items-center justify-content-center">
-      <h4 class="text-muted text-center">No files selected</h4>
+<div class="d-flex w-100 flex-column" style="height: calc(100% - 88px) !important;"
+     *ngIf="!(isUploading$$ | async); else uploadTemplate">
+  <div class="d-flex flex-row flex-grow-1">
+    <div class="col-2">
+      <app-upload-sidebar class="border border-primary h-100 d-flex flex-column"
+                          [knownTags]="tags$ | async"
+                          (values)="updateValue($event)"></app-upload-sidebar>
     </div>
-  </ng-template>
+    <div class="col-10 p-2 d-flex flex-column">
+      <app-upload-area class="flex-grow-1 mb-2" (filesSelected)="handleFileSelection($event)"></app-upload-area>
+      <ng-container *ngIf="files$$ | async as files">
+        <ng-container *ngIf="files.length; else noFiles">
+          <app-file-grid class="flex-grow-1 mb-2" [files]="files"
+                         (uploadFilesSelected)="handleUploadFileSelection($event)"></app-file-grid>
+          <div class="d-flex justify-content-between">
+            <button class="btn btn-danger" (click)="clear()">Clear</button>
+            <ng-container *ngIf="uploadMetadata$ | async as meta">
+              <ng-container *ngIf="meta.numFiles > 0">
+                <span class="d-block">{{meta.numFiles}} Files to upload</span>
+                <span class="d-block">{{meta.totalSize}}</span>
+                <button *ngIf="!meta.tooBig; else tooBig" class="btn btn-primary" (click)="upload()">Upload</button>
+                <ng-template #tooBig>
+                  <span class="d-block">Upload too big! Max. 1 GB.</span>
+                </ng-template>
+              </ng-container>
+            </ng-container>
+          </div>
+        </ng-container>
+      </ng-container>
+      <ng-template #noFiles>
+        <div class="flex-grow-1 d-flex flex-row align-items-center justify-content-center">
+          <h4 class="text-muted text-center">No files selected</h4>
+        </div>
+      </ng-template>
+    </div>
+  </div>
 </div>
 
 <ng-template #uploadTemplate>
-  Uploading... please wait.
-  <div *ngIf="zipProgress$$ | async as progress">
-    <div>{{progress.progress}}</div>
-    <div>{{progress.file}}</div>
-    <button class="btn btn-danger" (click)="cancelUpload$$.next(); isUploading$$.next(false);">Cancel</button>
+  <div class="d-flex h-100 w-100 flex-column">
+    <ng-container *ngIf="uploadStage$$ | async as stage">
+      <ng-container *ngIf="stage === 'zip'">
+        <h4>Compressing files for upload...</h4>
+        <div *ngIf="zipProgress$$ | async as progress">
+          <div>{{progress.progress}}</div>
+          <div>{{progress.file}}</div>
+          <button class="btn btn-danger" (click)="cancelUpload$$.next(); isUploading$$.next(false);">Cancel</button>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="stage === 'upload'">
+        <h4>Uploading to server...</h4>
+        <div *ngIf="uploadProgress$$ | async as progress">
+          <div>{{progress.progress}}</div>
+          <div>State: {{progress.state}}</div>
+        </div>
+      </ng-container>
+    </ng-container>
   </div>
 </ng-template>

@@ -26,11 +26,17 @@ public class ImageFile {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "type")
     private String type;
 
     @Column(name = "category")
     private String category;
+
+    @Column(name = "description", length = 4096)
+    private String description;
 
     /* Hash of the original image file (not the converted webp in the database) to avoid duplicate uploads */
     @Column(name = "imagehash", unique = true, nullable = false)

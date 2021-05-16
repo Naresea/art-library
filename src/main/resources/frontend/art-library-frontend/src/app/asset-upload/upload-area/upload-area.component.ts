@@ -94,7 +94,13 @@ export class UploadAreaComponent {
 
   private emitFiles(files: Array<File>): void {
     const filtered = files.filter(f => {
-      return f.type.includes('image');
+      const supportedMimeTypes = [
+        'image/png',
+        'image/webp',
+        'image/jpg',
+        'image/jpeg'
+      ]
+      return supportedMimeTypes.some(t => f.type.includes(t));
     });
     this.filesSelected.emit(filtered);
   }

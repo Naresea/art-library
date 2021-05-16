@@ -1,6 +1,6 @@
 import {Injectable, OnDestroy} from "@angular/core";
 import {ReplaySubject, Subject} from "rxjs";
-import {ImageMetadata, ImageSize, Page, QueryMethod} from "../models/image.model";
+import {ImageMetadata, ImageMetadataUpdate, ImageSize, Page, QueryMethod} from "../models/image.model";
 import {environment} from "../../environments/environment";
 import {BackendService} from "./backend.service";
 import {filter, take, takeUntil} from "rxjs/operators";
@@ -17,16 +17,15 @@ export class ImageService implements OnDestroy {
   }
 
   private readonly destroy$$ = new Subject<void>();
-  private readonly images$$ = new ReplaySubject<Array<ImageMetadata>>(1);
   private readonly imagePage$$ = new ReplaySubject<Page<ImageMetadata>>(1);
   private pageSize = 50;
   private page = 0;
   private tags: Array<string> = [];
+  private categories: Array<string> = [];
   private isFirstPage = true;
   private isLastPage = false;
   private query: QueryMethod = QueryMethod.HAS_ALL_OF;
 
-  public readonly images$ = this.images$$.asObservable();
   public readonly imagePage$ = this.imagePage$$.asObservable();
 
   constructor(private readonly backendService: BackendService) {
@@ -38,39 +37,40 @@ export class ImageService implements OnDestroy {
     this.destroy$$.complete();
   }
 
-  public search(query: QueryMethod, searchString: string): void {
+  public search(query: QueryMethod, tags: Array<string>, category: Array<string>): void {
     this.page = 0;
     this.isLastPage = false;
     this.isFirstPage = true;
-    const tags = searchString.split(/\s+/g);
-    this.searchImpl(query, ...tags);
+    this.searchImpl(query, tags, category);
   }
 
-  public nextPage(): void {
-    if (this.isLastPage) {
-      return;
-    }
-    this.page++;
-    this.searchImpl(this.query, ...this.tags);
+  public updateImage(image: ImageMetadataUpdate): void {
+    this.backendService.update(
+      `${environment.apiUrl}/images/${image.id}`,
+      {...image, id: undefined}
+    ).pipe(
+      takeUntil(this.destroy$$)
+    ).subscribe();
   }
 
-  public prevPage(): void {
-    if (this.isFirstPage) {
-      return;
-    }
-    this.page--;
-    this.searchImpl(this.query, ...this.tags);
+  public deleteImage(id: number): void {
+    this.backendService.delete(
+      `${environment.apiUrl}/images/${id}`
+    ).pipe(
+      takeUntil(this.destroy$$)
+    ).subscribe();
   }
 
   public getPage(pageNumber: number): void {
     this.page = pageNumber;
-    this.searchImpl(this.query, ...this.tags);
+    this.searchImpl(this.query, this.tags, this.categories);
   }
 
-  private searchImpl(query: QueryMethod, ...tags: Array<string>): void {
-    this.tags = tags;
+  private searchImpl(query: QueryMethod, tags?: Array<string>, categories?: Array<string>): void {
+    this.tags = tags ?? [];
+    this.categories = categories ?? [];
     this.query = query;
-    const url =`${environment.apiUrl}/images/search?query=${this.query}&page=${this.page}&size=${this.pageSize}&tags=${this.tags.join(',')}`;
+    const url =`${environment.apiUrl}/images/search?query=${this.query}&page=${this.page}&size=${this.pageSize}&tags=${this.tags.join(',')}&categories=${this.categories.join(',')}`;
     this.backendService.read<Page<ImageMetadata>>(url)
       .pipe(
         filter((res) => res.state === TransferState.DONE && !!res.result),
@@ -84,7 +84,6 @@ export class ImageService implements OnDestroy {
         this.isFirstPage = page.first;
         this.isLastPage = page.last;
         this.page = page.number;
-        this.images$$.next(page.content);
         this.imagePage$$.next(page);
       });
   }

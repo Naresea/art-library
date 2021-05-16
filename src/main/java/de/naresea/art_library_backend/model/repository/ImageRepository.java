@@ -11,7 +11,10 @@ import java.util.Optional;
 
 public interface ImageRepository extends PagingAndSortingRepository<ImageFile, Long> {
     Optional<ImageFile> findByName(String name);
+
     Page<ImageFile> findByTags_NameIn(Collection<String> tags, Pageable page);
+
+    Page<ImageFile> findByTags_NameInAndCategoryIn(Collection<String> tags, Collection<String> categories, Pageable page);
 
     @Query(value = "SELECT i from ImageFile i LEFT JOIN i.tags t GROUP BY i"
         + " HAVING SUM(CASE WHEN t.name IN (:tags) THEN 1 ELSE 0 END) = :tagListSize"
@@ -22,4 +25,14 @@ public interface ImageRepository extends PagingAndSortingRepository<ImageFile, L
             + " HAVING SUM(CASE WHEN t.name IN (:tags) THEN 1 ELSE -1 END) = :tagListSize"
     )
     Page<ImageFile> findByHasOnlyAllTags(Collection<String> tags, Long tagListSize, Pageable page);
+
+    @Query(value = "SELECT i from ImageFile i LEFT JOIN i.tags t WHERE i.category IN (:categories) GROUP BY i"
+            + " HAVING SUM(CASE WHEN t.name IN (:tags) THEN 1 ELSE 0 END) = :tagListSize"
+    )
+    Page<ImageFile> findByHasAllTagsAndCategegories(Collection<String> tags, Long tagListSize, Collection<String> categories, Pageable page);
+
+    @Query(value = "SELECT i from ImageFile i LEFT JOIN i.tags t WHERE i.category IN (:categories) GROUP BY i"
+            + " HAVING SUM(CASE WHEN t.name IN (:tags) THEN 1 ELSE -1 END) = :tagListSize"
+    )
+    Page<ImageFile> findByHasOnlyAllTagsAndCategories(Collection<String> tags, Long tagListSize, Collection<String> categories, Pageable page);
 }

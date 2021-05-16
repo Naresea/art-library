@@ -101,13 +101,16 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   @Output()
   public pageNeeded = new EventEmitter<number>();
 
+  @Output()
+  public imageSelected = new EventEmitter<ImageMetadata | undefined>();
+
   private readonly rowTransforms$$ = new ReplaySubject<Record<number, string>>(1);
   private readonly rowImages$$ = new ReplaySubject<Record<number, Array<ImageMetadata>>>(1);
   private readonly pageRequest$$ = new ReplaySubject<number>();
   public readonly domRows$$ = new ReplaySubject<Array<number>>(1);
-  public readonly rowData$$ = combineLatest([this.rowTransforms$$, this.rowImages$$])
-    .pipe(map(([transforms, images]) => ({transforms, images})));
-
+  public readonly selectedImage$$ = new BehaviorSubject<ImageMetadata | undefined>(undefined);
+  public readonly rowData$$ = combineLatest([this.rowTransforms$$, this.rowImages$$, this.selectedImage$$])
+    .pipe(map(([transforms, images, selected]) => ({transforms, images, selected})));
 
   private readonly recalculate$$ = new BehaviorSubject<boolean>(true);
   private readonly recalculate$ = this.recalculate$$.pipe(
@@ -141,6 +144,10 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
     this.destroy$$.complete();
   }
 
+  public selectImage(image: ImageMetadata | undefined): void {
+    this.selectedImage$$.next(image);
+    this.imageSelected.emit(image);
+  }
 
   public updateScroll(): void {
     const transforms: Record<number, string> = {};
@@ -257,5 +264,9 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
 
   public getImageUrl(image: ImageMetadata): string {
     return ImageService.getImageUrl(image, ImageSize.MEDIUM);
+  }
+
+  public getRealImageUrl(image: ImageMetadata): string {
+    return ImageService.getImageUrl(image, ImageSize.BIG);
   }
 }

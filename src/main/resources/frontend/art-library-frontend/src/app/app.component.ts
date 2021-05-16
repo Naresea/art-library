@@ -28,13 +28,9 @@ export class AppComponent {
   }
 
   public search(): void {
-    if (this.searchBar && this.searchBar.nativeElement) {
-      const text = (this.searchBar.nativeElement as HTMLInputElement).value;
-      this.searchTerm$$.next(text);
-    }
+
   }
 
   constructor(private readonly router: Router, private readonly imageService: ImageService) {
-    this.searchTerm$.subscribe((search) => this.imageService.search(QueryMethod.HAS_ALL_OF, search))
   }
 }

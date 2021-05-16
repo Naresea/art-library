@@ -34,12 +34,6 @@ export class FileGridComponent {
     defaultColDef: {
       flex: 1,
       minWidth: 100,
-      // allow every column to be aggregated
-      enableValue: true,
-      // allow every column to be grouped
-      enableRowGroup: true,
-      // allow every column to be pivoted
-      enablePivot: true,
       sortable: true,
       filter: true,
       floatingFilter: true

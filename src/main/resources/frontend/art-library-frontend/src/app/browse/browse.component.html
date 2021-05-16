@@ -1,10 +1,18 @@
 <div style="height: calc(100% - 88px) !important;" class="d-flex w-100 overflow-hidden">
-  <app-image-sidebar class="col-2 border border-primary"></app-image-sidebar>
+  <app-image-sidebar
+    class="col-2 border border-primary"
+    [activeImage]="selectedImage$$ | async"
+    [knownTags]="(tags$ | async) || []"
+    (searchTriggered)="search($event)"
+    (updateImage)="updateImage($event)"
+    (deleteImage)="deleteImage($event)">
+  </app-image-sidebar>
   <ng-container *ngIf="imagePage$ | async as images">
     <app-image-gallery class="col-10"
                        [imagePage]="images"
                        [numImages]="images.totalElements"
-                       (pageNeeded)="getPage($event)">
+                       (pageNeeded)="getPage($event)"
+                       (imageSelected)="selectedImage$$.next($event)">
     </app-image-gallery>
   </ng-container>
 </div>

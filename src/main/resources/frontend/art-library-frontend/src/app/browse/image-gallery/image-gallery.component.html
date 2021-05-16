@@ -1,5 +1,5 @@
 <div #scrollwindow (scroll)="updateScroll()" class="scrollwindow d-flex w-100 h-100 overflow-auto">
-  <div #scrollpane class="scrollpane w-100"></div>
+  <div #scrollpane class="scrollpane w-100" (click)="selectImage(undefined)"></div>
 </div>
 
 <ng-container *ngFor="let rowIdx of (domRows$$ | async)">
@@ -12,7 +12,8 @@
         <div *ngIf="image; else blankimage"
              class="scrollimage"
              style="border: 1px solid black; cursor: pointer; width: 256px; height: 256px;"
-             (click)="downloadImage(image)">
+             [class.border-primary]="rowData.selected?.id === image.id"
+             (click)="selectImage(image)">
           <img [lazyLoad]="getImageUrl(image)"/>
         </div>
         <ng-template #blankimage>
@@ -22,4 +23,10 @@
       </ng-container>
     </div>
   </ng-container>
+</ng-container>
+
+<ng-container *ngIf="selectedImage$$ | async as selectedImage">
+  <div (click)="selectImage(undefined)" style="position: absolute; left: 0; top: 0; bottom: 0; right: 0; display: flex; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.9)">
+    <img [lazyLoad]="getRealImageUrl(selectedImage)" style="max-width: 80%; max-height: 80%; pointer-events: none;"/>
+  </div>
 </ng-container>

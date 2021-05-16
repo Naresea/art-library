@@ -1,9 +1,12 @@
 package de.naresea.art_library_backend.controller;
 
 import de.naresea.art_library_backend.model.dto.ImageDto;
+import de.naresea.art_library_backend.model.dto.ImageUpdateDto;
 import de.naresea.art_library_backend.model.dto.UploadResultDto;
 import de.naresea.art_library_backend.model.entity.ImageFile;
+import de.naresea.art_library_backend.model.entity.ImageTag;
 import de.naresea.art_library_backend.model.repository.ImageRepository;
+import de.naresea.art_library_backend.model.repository.ImageTagRepository;
 import de.naresea.art_library_backend.service.ImageImportService;
 import de.naresea.art_library_backend.service.ProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +18,21 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping(path = "api/images")
 public class ImageController {
 
     @Autowired
     ImageRepository imageRepository;
+
+    @Autowired
+    ImageTagRepository tagRepository;
 
     @Autowired
     private ImageImportService imageImportService;
@@ -49,26 +56,42 @@ public class ImageController {
         return this.imageRepository.findAll(pageable).map(ImageDto::new);
     }
 
-    @GetMapping(path = {"/search"}, params = {  "page", "size", "tags", "query" })
+    @GetMapping(path = {"/search"}, params = {  "page", "size", "tags", "query", "categories" })
     public Page<ImageDto> getImagesByTags(
             @RequestParam("page") int page,
             @RequestParam("size") int size,
             @RequestParam("tags") String[] tags,
-            @RequestParam("query") String query
+            @RequestParam("query") String query,
+            @RequestParam("categories") String[] categories
     ) {
         var actualPageSize = Math.min(size, 100);
         var pageable = PageRequest.of(page, actualPageSize);
         if (query.equals("any")) {
-            return this.imageRepository.findByTags_NameIn(Arrays.asList(tags), pageable)
-                    .map(ImageDto::new);
+            if (categories != null && categories.length > 0) {
+                return this.imageRepository.findByTags_NameInAndCategoryIn(Arrays.asList(tags), Arrays.asList(categories), pageable)
+                        .map(ImageDto::new);
+            } else {
+                return this.imageRepository.findByTags_NameIn(Arrays.asList(tags), pageable)
+                        .map(ImageDto::new);
+            }
         }
         if (query.equals("all")) {
-            return this.imageRepository.findByHasAllTags(Arrays.asList(tags), (long) tags.length, pageable)
-                    .map(ImageDto::new);
+            if (categories != null && categories.length > 0) {
+                return this.imageRepository.findByHasAllTagsAndCategegories(Arrays.asList(tags), (long) tags.length, Arrays.asList(categories), pageable)
+                        .map(ImageDto::new);
+            } else {
+                return this.imageRepository.findByHasAllTags(Arrays.asList(tags), (long) tags.length, pageable)
+                        .map(ImageDto::new);
+            }
         }
         if (query.equals("exact")) {
-            return this.imageRepository.findByHasOnlyAllTags(Arrays.asList(tags), (long) tags.length, pageable)
-                    .map(ImageDto::new);
+            if (categories != null && categories.length > 0) {
+                return this.imageRepository.findByHasOnlyAllTagsAndCategories(Arrays.asList(tags), (long) tags.length, Arrays.asList(categories), pageable)
+                        .map(ImageDto::new);
+            } else {
+                return this.imageRepository.findByHasOnlyAllTags(Arrays.asList(tags), (long) tags.length, pageable)
+                        .map(ImageDto::new);
+            }
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -104,5 +127,44 @@ public class ImageController {
         }
         response.setContentType("image/webp");
         response.getOutputStream().write(data);
+    }
+
+    @PatchMapping(path = {"/{imageId}"})
+    @Transactional
+    public void updateMetadata(@PathVariable("imageId") Long imageId, @RequestBody ImageUpdateDto updateDto) {
+        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
+        if (retrievedImage.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        var img = retrievedImage.get();
+
+        if (updateDto.getTags() != null ) {
+            var lowercaseTags = updateDto.getTags().stream().map(String::toLowerCase).collect(Collectors.toList());
+            var existingTags = tagRepository.findByNameIn(lowercaseTags);
+            var tagsToSave = lowercaseTags.stream()
+                    .filter(t -> existingTags.stream().noneMatch(et -> et.getName().equals(t)))
+                    .map(ImageTag::new)
+                    .collect(Collectors.toList());
+            var savedTags = tagRepository.saveAll(tagsToSave);
+            img.getTags().clear();
+            img.getTags().addAll(existingTags);
+            img.getTags().addAll(savedTags);
+        }
+        if (updateDto.getCategory() != null) {
+            img.setCategory(updateDto.getCategory());
+        }
+        if (updateDto.getDescription() != null) {
+            img.setDescription(updateDto.getDescription());
+        }
+        if (updateDto.getTitle() != null) {
+            img.setTitle(updateDto.getTitle());
+        }
+
+        imageRepository.save(img);
+    }
+
+    @DeleteMapping(path = {"/{imageId}"})
+    public void deleteImage(@PathVariable("imageId") Long imageId) {
+        imageRepository.deleteById(imageId);
     }
 }

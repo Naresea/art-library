@@ -1,1 +1,69 @@
-<p>image-sidebar works!</p>
+<ng-container *ngIf="activeImage; else searchSidebar">
+  <div class="d-flex flex-column h-100 p-2">
+    <form class="d-flex flex-column flex-grow-1">
+      <label for="imageName">Name</label>
+      <input id="imageName" name="imageName" class="form-control" type="text" readonly [value]="activeImage.name"/>
+
+      <label for="imageTitle">Title</label>
+      <input #title id="imageTitle" name="imageTitle" class="form-control" type="text" [value]="activeImage.title"/>
+
+      <label for="imageCategory" class="mt-2">Category</label>
+      <select #category id="imageCategory" class="form-control">
+        <option [value]="''" [selected]="!activeImage.category"></option>
+        <option [value]="CATEGORIES.TOKEN" [selected]="activeImage.category === CATEGORIES.TOKEN">Token</option>
+        <option [value]="CATEGORIES.BATTLEMAP" [selected]="activeImage.category === CATEGORIES.BATTLEMAP">Battlemap</option>
+        <option [value]="CATEGORIES.ARTWORK" [selected]="activeImage.category === CATEGORIES.ARTWORK">Artwork</option>
+      </select>
+
+      <label for="imageTags" class="mt-2">Tags</label>
+      <input #tags id="imageTags" name="imageTags" class="form-control" type="text"
+             [value]="getImageTags(activeImage) || ''"/>
+
+      <label class="mt-2">Description</label>
+      <editor name="imageDescription"
+              class="flex-grow-1"
+              [(ngModel)]="editorContent"
+              [initialValue]="activeImage.description || ''"
+              [init]="editorConfig"
+      ></editor>
+    </form>
+    <div class="mt-4 d-flex justify-content-between">
+      <button class="btn btn-danger" (click)="deleteImageImpl(activeImage)">Delete</button>
+      <button class="btn" (click)="downloadImage(activeImage)">Download</button>
+      <button class="btn btn-primary" (click)="updateImageImpl(activeImage, category.value, tags.value, title.value)">Save</button>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #searchSidebar>
+  <div class="d-flex flex-column p-2">
+    <form class="d-flex flex-column">
+      <label for="searchCategory">Categories</label>
+      <ng-multiselect-dropdown id="searchCategory"
+                               name="searchCategory"
+                               [placeholder]="'Categories to search for'"
+                               [settings]="multiselectSettings"
+                               [data]="searchCategories"
+                               [(ngModel)]="selectedCategories">
+      </ng-multiselect-dropdown>
+      <label class="mt-2" for="searchTags">Tags</label>
+      <ng-multiselect-dropdown id="searchTags"
+                               name="searchTags"
+                               [placeholder]="'Tags to search for'"
+                               [settings]="multiselectSettings"
+                               [data]="searchTags"
+                               [(ngModel)]="selectedTags">
+      </ng-multiselect-dropdown>
+      <label class="mt-2" for="searchMode">Tags</label>
+      <select #searchMode id="searchMode" class="form-control">
+        <option [value]="QUERY_METHOD.HAS_ALL_OF">All Tags</option>
+        <option [value]="QUERY_METHOD.HAS_ONE_OF">At Least One Tag</option>
+        <option [value]="QUERY_METHOD.HAS_EXACTLY">Exactly These Tags</option>
+      </select>
+    </form>
+    <div class="mt-4 d-flex justify-content-between">
+      <div class="flex-grow-1"></div>
+      <button class="btn btn-primary" (click)="search(searchMode.value)">Search</button>
+    </div>
+  </div>
+</ng-template>

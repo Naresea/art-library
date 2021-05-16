@@ -33,6 +33,7 @@ public class ImageImportService {
     private static class TagImport {
         String key;
         Collection<ImageTag> tags;
+        String category;
     }
 
     private static final int SMALL_WIDTH_PX = 128;
@@ -118,15 +119,16 @@ public class ImageImportService {
         meta.keySet().stream().map(key -> {
             var value = meta.get(key);
             var tagsForKey = value != null ? value.getTags() : new HashSet<String>();
+            var category = value != null ? value.getCategory() : "";
             var savedTags = saveTagsToDatabase(
                     tagsForKey,
                     imageTagRepository.findByNameIn(tagsForKey),
                     imageTagRepository
             );
-            return new TagImport(key, savedTags);
+            return new TagImport(key, savedTags, category);
         }).forEach(tagImport -> {
             try {
-                var imageData = getImageFile(dir, tagImport.getKey(), tagImport.getTags(), hashService);
+                var imageData = getImageFile(dir, tagImport.getKey(), tagImport.getTags(), tagImport.getCategory(), hashService);
                 imageRepository.save(imageData);
                 ProgressService.reportProgress(meta.size(), success.incrementAndGet(), failed.get(), uuid);
             } catch (Exception e) {
@@ -137,7 +139,7 @@ public class ImageImportService {
         return true;
     }
 
-    private static ImageFile getImageFile(final File dir, final String key, final Collection<ImageTag> savedTags, final HashService hashService) throws IOException {
+    private static ImageFile getImageFile(final File dir, final String key, final Collection<ImageTag> savedTags, final String category, final HashService hashService) throws IOException {
         var rawImage = Files.readAllBytes(Paths.get(dir.getPath(), key));
         var hash = hashService.getHashSum(rawImage);
         var bis = new ByteArrayInputStream(rawImage);
@@ -154,7 +156,9 @@ public class ImageImportService {
                 webpImage
         );
 
+        imageForDatabase.setTitle(key);
         imageForDatabase.setTags(new HashSet<>(savedTags));
+        imageForDatabase.setCategory(category);
         imageForDatabase.setThumbnailBig(big);
         imageForDatabase.setThumbnailMedium(med);
         imageForDatabase.setThumbnailSmall(small);

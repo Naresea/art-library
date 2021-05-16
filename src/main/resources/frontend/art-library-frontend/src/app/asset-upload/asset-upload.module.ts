@@ -8,20 +8,24 @@ import { UploadAreaComponent } from './upload-area/upload-area.component';
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {AgGridModule} from "ag-grid-angular";
 import { FileGridComponent } from './file-grid/file-grid.component';
+import { UploadSidebarComponent } from './upload-sidebar/upload-sidebar.component';
+import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
 
 
 @NgModule({
   declarations: [
     AssetUploadComponent,
     UploadAreaComponent,
-    FileGridComponent
+    FileGridComponent,
+    UploadSidebarComponent
   ],
     imports: [
         CommonModule,
         AssetUploadRoutingModule,
         FormsModule,
         FontAwesomeModule,
-        AgGridModule.withComponents([])
+        AgGridModule.withComponents([]),
+        NgMultiSelectDropDownModule
     ]
 })
 export class AssetUploadModule { }
