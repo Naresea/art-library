@@ -18,7 +18,8 @@ export class ImageService implements OnDestroy {
 
   private readonly destroy$$ = new Subject<void>();
   private readonly images$$ = new ReplaySubject<Array<ImageMetadata>>(1);
-  private pageSize = 200;
+  private readonly imagePage$$ = new ReplaySubject<Page<ImageMetadata>>(1);
+  private pageSize = 100;
   private page = 0;
   private tags: Array<string> = [];
   private isFirstPage = true;
@@ -26,6 +27,7 @@ export class ImageService implements OnDestroy {
   private query: QueryMethod = QueryMethod.HAS_ALL_OF;
 
   public readonly images$ = this.images$$.asObservable();
+  public readonly imagePage$ = this.imagePage$$.asObservable();
 
   constructor(private readonly backendService: BackendService) {
     this.searchImpl(QueryMethod.HAS_ALL_OF);
@@ -78,6 +80,7 @@ export class ImageService implements OnDestroy {
         this.isLastPage = page.last;
         this.page = page.number;
         this.images$$.next(page.content);
+        this.imagePage$$.next(page);
       });
   }
 }

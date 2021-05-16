@@ -1,5 +1,15 @@
-import {AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ImageMetadata, ImageSize} from "../../models/image.model";
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  EventEmitter,
+  Output
+} from '@angular/core';
+import {ImageMetadata, ImageSize, Page} from "../../models/image.model";
 import {ImageService} from "../../services/image.service";
 import {BehaviorSubject, combineLatest, ReplaySubject, Subject} from "rxjs";
 import {debounceTime, map, takeUntil} from "rxjs/operators";
@@ -16,6 +26,11 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   private mMargin = 50;
   private mImages: Array<ImageMetadata> = [];
 
+  private mTopPage?: Page<ImageMetadata>;
+  private mBottomPage?: Page<ImageMetadata>;
+  private mActivePage?: 'top' | 'bottom';
+
+
   @ViewChild('scrollwindow', {read: ElementRef})
   public scrollwindow?: ElementRef;
 
@@ -31,6 +46,52 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   public get numImages() {
     return this.mNumImages;
+  }
+
+  @Input()
+  public set imagePage(pg: Page<ImageMetadata>) {
+    if (pg) {
+      if (this.mActivePage === 'top') {
+        this.mBottomPage = pg;
+      } else {
+        this.mTopPage = pg;
+      }
+    }
+  }
+
+  private getImagesForRange(startIdx: number, endIdx: number): Array<ImageMetadata> {
+    if (!this.mTopPage) {
+      return [];
+    }
+    const pageBaseIdx = this.mTopPage.number * this.mTopPage.size;
+    if (startIdx < pageBaseIdx) {
+      this.mActivePage = 'top';
+      this.prevPage.emit();
+      return [];
+    }
+
+    const maxPage = (this.mBottomPage ?? this.mTopPage);
+    const maxPageIdx = maxPage.number * maxPage.size + maxPage.numberOfElements;
+    if (endIdx > maxPageIdx) {
+      this.mActivePage = 'bottom';
+      this.nextPage.emit();
+      return [];
+    }
+    const start = startIdx - pageBaseIdx;
+    const end = maxPageIdx - endIdx;
+
+
+    const result: Array<ImageMetadata> = [];
+    for (let i = start; i < this.mTopPage.content.length && i < end; i++) {
+      result.push(this.mTopPage.content[i]);
+    }
+    const added = result.length;
+    if (this.mBottomPage) {
+      for (let i = 0; i < (end - added); i++) {
+        result.push(this.mBottomPage.content[i]);
+      }
+    }
+    return result;
   }
 
   @Input()
@@ -65,6 +126,12 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
   public get margin() {
     return this.mMargin;
   }
+
+  @Output()
+  public nextPage = new EventEmitter<void>();
+
+  @Output()
+  public prevPage = new EventEmitter<void>();
 
   private readonly rowTransforms$$ = new ReplaySubject<Record<number, string>>(1);
   private readonly rowImages$$ = new ReplaySubject<Record<number, Array<ImageMetadata>>>(1);
@@ -150,11 +217,12 @@ export class ImageGalleryComponent implements OnInit, OnDestroy, AfterViewInit {
     const startIdx = finalIdx * this.imagesPerRow;
     const endIdx = startIdx + this.imagesPerRow;
 
-    const images: Array<ImageMetadata> = [];
+    /*const images: Array<ImageMetadata> = [];
     for (let i = startIdx; i < endIdx; i++) {
       images.push(this.images[i]);
     }
-    return images;
+    return images;*/
+    return this.getImagesForRange(startIdx, endIdx);
   }
 
   private recalculateDomElements(): void {

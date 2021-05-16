@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component} from '@angular/core';
 import {ImageService} from "../services/image.service";
 
 @Component({
@@ -6,13 +6,19 @@ import {ImageService} from "../services/image.service";
   templateUrl: './browse.component.html',
   styleUrls: ['./browse.component.scss']
 })
-export class BrowseComponent implements OnInit {
+export class BrowseComponent {
 
   public readonly images$ = this.imageService.images$;
+  public readonly imagePage$ = this.imageService.imagePage$;
 
   constructor(private readonly imageService: ImageService) { }
 
-  ngOnInit(): void {
+
+  public nextPage(): void {
+    this.imageService.nextPage();
   }
 
+  public prevPage(): void {
+    this.imageService.prevPage();
+  }
 }

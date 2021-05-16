@@ -1,6 +1,11 @@
 <div style="height: calc(100% - 88px) !important;" class="d-flex w-100 overflow-hidden">
   <app-image-sidebar class="col-2 border border-primary"></app-image-sidebar>
-  <ng-container *ngIf="images$ | async as images">
-    <app-image-gallery class="col-10" [images]="images" [numImages]="images.length"></app-image-gallery>
+  <ng-container *ngIf="imagePage$ | async as images">
+    <app-image-gallery class="col-10"
+                       [imagePage]="images"
+                       [numImages]="images.totalElements"
+                       (nextPage)="nextPage()"
+                       (prevPage)="prevPage()">
+    </app-image-gallery>
   </ng-container>
 </div>
