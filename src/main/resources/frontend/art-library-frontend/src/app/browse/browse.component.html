@@ -10,7 +10,7 @@
   <ng-container *ngIf="imagePage$ | async as images">
     <app-image-gallery-lib class="col-10" [imagePage]="imagePage$ | async"
                            (imageSelected)="selectedImage$$.next($event)"
-                           (nextPage)="nextPage()">
+                           (requestPage)="getPage($event)">
     </app-image-gallery-lib>
     <!--
     <app-image-gallery class="col-10"

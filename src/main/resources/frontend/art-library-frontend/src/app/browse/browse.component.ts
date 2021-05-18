@@ -16,7 +16,7 @@ export class BrowseComponent {
   public readonly imagePage$ = this.imageService.imagePage$;
   public readonly tags$ = this.tagService.tags$;
 
-  constructor(private readonly imageService: ImageService, private readonly tagService: TagService) { }
+  constructor(private readonly imageService: ImageService, private readonly tagService: TagService) {}
 
 
   public getPage(pageIdx: number): void {

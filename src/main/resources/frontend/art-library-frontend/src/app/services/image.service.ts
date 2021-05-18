@@ -18,7 +18,7 @@ export class ImageService implements OnDestroy {
 
   private readonly destroy$$ = new Subject<void>();
   private readonly imagePage$$ = new ReplaySubject<Page<ImageMetadata> | undefined>(1);
-  private pageSize = 50;
+  private pageSize = 100;
   private page = 0;
   private tags: Array<string> = [];
   private categories: Array<string> = [];
