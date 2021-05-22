@@ -74,7 +74,33 @@ public class ImageCrudService {
             var processData = this.processingService.processImage(i.getImageFile());
             return this.getCreateImage(i, processData, tags).orElse(null);
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        var save = Utils.toList(this.imageRepository.saveAll(processedImages));
+
+        var hashSet = new HashSet<String>();
+        var cleanedList = new ArrayList<ImageFile>(processedImages.size());
+        for (var processed: processedImages) {
+            if (hashSet.contains(processed.getImagehash())) {
+                System.err.println("Found duplicate file in upload, skipping: " + processed.getTitle());
+            } else {
+                hashSet.add(processed.getImagehash());
+                cleanedList.add(processed);
+            }
+        }
+
+        var hashes = cleanedList.stream().map(ImageFile::getImagehash).collect(Collectors.toSet());
+        var duplicates = this.imageRepository.findAllByImagehashIn(hashes)
+                .stream()
+                .map(ImageFile::getImagehash)
+                .collect(Collectors.toSet());
+
+        var groups = cleanedList.stream().collect(Collectors.partitioningBy(i -> duplicates.contains(i.getImagehash())));
+        var toSave = groups.get(false);
+        var toLog = groups.get(true);
+
+        if (!toLog.isEmpty()) {
+            System.err.println("Skipping upload of duplicate image files: " + toLog.stream().map(ImageFile::getTitle).collect(Collectors.toList()));
+        }
+
+        var save = Utils.toList(this.imageRepository.saveAll(toSave));
         this.addToSearch(save);
         return Optional.of(save);
     }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface ImageRepository extends PagingAndSortingRepository<ImageFile, Long> {
@@ -15,6 +16,8 @@ public interface ImageRepository extends PagingAndSortingRepository<ImageFile, L
     Page<ImageFile> findByTags_NameIn(Collection<String> tags, Pageable page);
 
     Page<ImageFile> findByTags_NameInAndCategoryIn(Collection<String> tags, Collection<String> categories, Pageable page);
+
+    List<ImageFile> findAllByImagehashIn(Collection<String> hashes);
 
     @Query(value = "SELECT i from ImageFile i LEFT JOIN i.tags t GROUP BY i"
         + " HAVING SUM(CASE WHEN t.name IN (:tags) THEN 1 ELSE 0 END) = :tagListSize"
