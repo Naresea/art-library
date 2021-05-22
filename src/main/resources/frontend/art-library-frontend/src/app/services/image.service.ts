@@ -25,6 +25,7 @@ export class ImageService implements OnDestroy {
   private isFirstPage = true;
   private isLastPage = false;
   private query: QueryMethod = QueryMethod.HAS_ALL_OF;
+  private luceneQuery?: string;
 
   public readonly imagePage$ = this.imagePage$$.asObservable();
 
@@ -35,6 +36,15 @@ export class ImageService implements OnDestroy {
   public ngOnDestroy(): void {
     this.destroy$$.next();
     this.destroy$$.complete();
+  }
+
+  public searchLucene(query: string): void {
+    this.page = 0;
+    this.luceneQuery = query;
+    this.isLastPage = false;
+    this.isFirstPage = true;
+    this.imagePage$$.next(undefined);
+    this.searchLuceneImpl(query);
   }
 
   public search(query: QueryMethod, tags: Array<string>, category: Array<string>): void {
@@ -63,8 +73,11 @@ export class ImageService implements OnDestroy {
   }
 
   public getPage(pageNumber: number): void {
+    if (!this.luceneQuery) {
+      return;
+    }
     this.page = pageNumber;
-    this.searchImpl(this.query, this.tags, this.categories);
+    this.searchLuceneImpl(this.luceneQuery);
   }
 
   public nextPage(): void {
@@ -92,5 +105,25 @@ export class ImageService implements OnDestroy {
         this.page = page.number;
         this.imagePage$$.next(page);
       });
+  }
+
+  private searchLuceneImpl(query: string): void {
+    this.luceneQuery = query;
+    const url =`${environment.apiUrl}/images/search?page=${this.page}&size=${this.pageSize}&query=${this.luceneQuery}`;
+    this.backendService.read<Page<ImageMetadata>>(url)
+      .pipe(
+        filter((res) => res.state === TransferState.DONE && !!res.result),
+        take(1),
+        takeUntil(this.destroy$$)
+      ).subscribe((pageTransfer) => {
+      const page = pageTransfer.result;
+      if (!page) {
+        return;
+      }
+      this.isFirstPage = page.first;
+      this.isLastPage = page.last;
+      this.page = page.number;
+      this.imagePage$$.next(page);
+    });
   }
 }

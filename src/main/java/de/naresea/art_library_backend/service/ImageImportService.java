@@ -3,80 +3,48 @@ package de.naresea.art_library_backend.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.naresea.art_library_backend.config.ArtLibraryConfig;
-import de.naresea.art_library_backend.model.dto.UploadMetadata;
-import de.naresea.art_library_backend.model.entity.ImageFile;
-import de.naresea.art_library_backend.model.entity.ImageTag;
-import de.naresea.art_library_backend.model.repository.ImageRepository;
-import de.naresea.art_library_backend.model.repository.ImageTagRepository;
-import lombok.Data;
-import lombok.Value;
-import net.coobird.thumbnailator.Thumbnails;
+import de.naresea.art_library_backend.service.model.ImageCreate;
+import de.naresea.art_library_backend.service.model.UploadMetadata;
 import net.lingala.zip4j.ZipFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
 public class ImageImportService {
 
-    @Data
-    @Value
-    private static class TagImport {
-        String key;
-        Collection<ImageTag> tags;
-        String category;
-    }
-
-    private static final int SMALL_WIDTH_PX = 128;
-    private static final int MED_WIDTH_PX = 256;
-    private static final int BIG_WIDTH_PX = 512;
-
     @Autowired
     private ThreadpoolService threadpoolService;
 
     @Autowired
-    private ImageRepository imageRepository;
-
-    @Autowired
-    ImageTagRepository imageTagRepository;
-
-    @Autowired
-    private ArtLibraryConfig config;
-
-    @Autowired
-    private HashService hashService;
+    private ImageCrudService imageCrudService;
 
     public String importMultipartImageZip(final MultipartFile multipartFile) {
-        final var imageRepository = this.imageRepository;
-        final var config = this.config;
-        final var hashService = this.hashService;
+        final var imageCrudService = this.imageCrudService;
         final var uuid = UUID.randomUUID().toString();
-        final var file = ImageImportService.writeMultipartToDisk(multipartFile, uuid, config);
-        final var zipDir = ImageImportService.extractZip(file, uuid, config);
+        final var file = ImageImportService.writeMultipartToDisk(multipartFile, uuid);
+        final var zipDir = ImageImportService.extractZip(file, uuid);
 
-        this.threadpoolService.getExecutor().submit(new Runnable() {
-            @Override
-            public void run() {
-                var metadata = ImageImportService.readMetadata(zipDir);
-                ImageImportService.importImages(zipDir, metadata, imageRepository, imageTagRepository, hashService, uuid);
-                ImageImportService.deleteTempDir(uuid, config);
-            }
+        this.threadpoolService.getExecutor().submit(() -> {
+            var metadata = ImageImportService.readMetadata(zipDir);
+            ImageImportService.importImages(zipDir, metadata, imageCrudService, uuid);
+            ImageImportService.deleteTempDir(uuid);
         });
 
         return uuid;
     }
 
-    private static void deleteTempDir(String uuid, ArtLibraryConfig config) {
-        var tempDir = config.getTempDirectory();
+    private static void deleteTempDir(String uuid) {
+        var tempDir = ArtLibraryConfig.getTempDirectory();
         var extractPath = Paths.get(tempDir, uuid);
         var tempFile = new File(Paths.get(tempDir, uuid + ".tmp").toString());
         try {
@@ -100,9 +68,7 @@ public class ImageImportService {
     private static boolean importImages(
             Optional<File> zipDir,
             Optional<Map<String, UploadMetadata>> metadata,
-            ImageRepository imageRepository,
-            ImageTagRepository imageTagRepository,
-            HashService hashService,
+            ImageCrudService imageCrudService,
             String uuid
     ) {
         if (zipDir.isEmpty() || metadata.isEmpty()) {
@@ -113,79 +79,23 @@ public class ImageImportService {
 
 
         ProgressService.reportProgress(meta.size(), 0, 0, uuid);
-        var success = new AtomicInteger(0);
-        var failed = new AtomicInteger(0);
 
-        meta.keySet().stream().map(key -> {
+        var imageCreates = meta.keySet().stream().map(key -> {
             var value = meta.get(key);
             var tagsForKey = value != null ? value.getTags() : new HashSet<String>();
             var category = value != null ? value.getCategory() : "";
-            var savedTags = saveTagsToDatabase(
-                    tagsForKey,
-                    imageTagRepository.findByNameIn(tagsForKey),
-                    imageTagRepository
-            );
-            return new TagImport(key, savedTags, category);
-        }).forEach(tagImport -> {
-            try {
-                var imageData = getImageFile(dir, tagImport.getKey(), tagImport.getTags(), tagImport.getCategory(), hashService);
-                imageRepository.save(imageData);
-                ProgressService.reportProgress(meta.size(), success.incrementAndGet(), failed.get(), uuid);
-            } catch (Exception e) {
-                e.printStackTrace();
-                ProgressService.reportProgress(meta.size(), success.get(), failed.incrementAndGet(), uuid);
-            }
-        });
+            var imageCreate = new ImageCreate();
+            imageCreate.setTags(tagsForKey);
+            imageCreate.setCategory(category);
+            imageCreate.setTitle(key);
+            imageCreate.setName(UUID.randomUUID().toString());
+            imageCreate.setType("image/webp");
+            imageCreate.setImageFile(Optional.of(Paths.get(dir.getPath(), key).toFile()));
+            return imageCreate;
+        }).collect(Collectors.toList());
+        imageCrudService.createImages(imageCreates);
+        ProgressService.reportProgress(meta.size(), meta.size(), 0, uuid);
         return true;
-    }
-
-    private static ImageFile getImageFile(final File dir, final String key, final Collection<ImageTag> savedTags, final String category, final HashService hashService) throws IOException {
-        var rawImage = Files.readAllBytes(Paths.get(dir.getPath(), key));
-        var hash = hashService.getHashSum(rawImage);
-        var bis = new ByteArrayInputStream(rawImage);
-        var bufferedImage = ImageIO.read(bis);
-        var webpImage = writeWebp(bufferedImage);
-
-        var big = writeWebp(Thumbnails.of(bufferedImage).size(BIG_WIDTH_PX, BIG_WIDTH_PX).keepAspectRatio(true).asBufferedImage());
-        var med = writeWebp(Thumbnails.of(bufferedImage).size(MED_WIDTH_PX, MED_WIDTH_PX).keepAspectRatio(true).asBufferedImage());
-        var small = writeWebp(Thumbnails.of(bufferedImage).size(SMALL_WIDTH_PX, SMALL_WIDTH_PX).keepAspectRatio(true).asBufferedImage());
-
-        var imageForDatabase = new ImageFile(
-                UUID.randomUUID() + ".webp",
-                "image/webp",
-                webpImage
-        );
-
-        imageForDatabase.setTitle(key);
-        imageForDatabase.setTags(new HashSet<>(savedTags));
-        imageForDatabase.setCategory(category);
-        imageForDatabase.setThumbnailBig(big);
-        imageForDatabase.setThumbnailMedium(med);
-        imageForDatabase.setThumbnailSmall(small);
-        imageForDatabase.setImagehash(hash);
-        return imageForDatabase;
-    }
-
-    private static synchronized Set<ImageTag> saveTagsToDatabase(Collection<String> tags, Collection<ImageTag> existingTags, ImageTagRepository imageTagRepository) {
-        var tagsToSave = tags.stream()
-                .filter(t -> existingTags.stream().noneMatch(tag -> tag.getName().equals(t)))
-                .map(ImageTag::new)
-                .collect(Collectors.toSet());
-        var tagsToAdd = tags.stream()
-                .map(t -> existingTags.stream().filter(tag -> tag.getName().equals(t)).findFirst().orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        var savedTags = imageTagRepository.saveAll(tagsToSave);
-        var resultSet = new HashSet<ImageTag>();
-        resultSet.addAll(tagsToAdd);
-        resultSet.addAll(savedTags);
-        return resultSet;
-    }
-
-    private static byte[] writeWebp(final BufferedImage image) throws IOException {
-        var bos = new ByteArrayOutputStream();
-        ImageIO.write(image, "webp", bos);
-        return bos.toByteArray();
     }
 
     private static Optional<Map<String, UploadMetadata>> readMetadata(Optional<File> zipDir) {
@@ -204,12 +114,12 @@ public class ImageImportService {
         }
     }
 
-    private static Optional<File> extractZip(Optional<File> file, String uuid, ArtLibraryConfig config) {
+    private static Optional<File> extractZip(Optional<File> file, String uuid) {
         if (file.isEmpty()) {
             return Optional.empty();
         }
         try {
-            var tempDir = config.getTempDirectory();
+            var tempDir = ArtLibraryConfig.getTempDirectory();
             var extractPath = Paths.get(tempDir, uuid);
             Files.createDirectories(extractPath);
             var zipFile = new ZipFile(file.get());
@@ -221,9 +131,9 @@ public class ImageImportService {
         }
     }
 
-    private static Optional<File> writeMultipartToDisk(MultipartFile multipartFile, String uuid, ArtLibraryConfig config) {
+    private static Optional<File> writeMultipartToDisk(MultipartFile multipartFile, String uuid) {
         try {
-            var tempDir = config.getTempDirectory();
+            var tempDir = ArtLibraryConfig.getTempDirectory();
             Files.createDirectories(Paths.get(tempDir));
             var tempFile = new File(Paths.get(tempDir, uuid + ".tmp").toString());
             InputStream initialStream = multipartFile.getInputStream();

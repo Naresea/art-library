@@ -1,14 +1,14 @@
-package de.naresea.art_library_backend.model.dto;
+package de.naresea.art_library_backend.controller.model;
 
 import de.naresea.art_library_backend.model.entity.ImageFile;
 import lombok.Data;
-import lombok.Value;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
-@Value
+@NoArgsConstructor
 public class ImageDto {
     Long id;
     String name;

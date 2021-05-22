@@ -1,4 +1,4 @@
-package de.naresea.art_library_backend.model.dto;
+package de.naresea.art_library_backend.controller.model;
 
 import de.naresea.art_library_backend.model.entity.ImageTag;
 import lombok.Data;

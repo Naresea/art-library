@@ -10,11 +10,10 @@
         <a class="nav-link" [routerLink]="routes.upload">Upload</a>
       </li>
     </ul>
-    <!--
-    <form *ngIf="isInBrowse" class="form-inline my-2 my-lg-0 d-flex">
+
+    <div *ngIf="isInBrowse" class="form-inline my-2 my-lg-0 d-flex">
       <input #searchbar class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" (change)="search()">
-      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-    </form>-->
+    </div>
   </div>
 </nav>
 <router-outlet></router-outlet>

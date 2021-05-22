@@ -1,4 +1,4 @@
-package de.naresea.art_library_backend.model.dto;
+package de.naresea.art_library_backend.service.model;
 
 import lombok.Builder;
 import lombok.Data;

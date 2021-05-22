@@ -81,7 +81,7 @@ export class ImageGalleryLibComponent implements OnInit, OnDestroy, AfterViewIni
 
     this.imagePages$$.next(this.pages);
     this.resetScrollTop(up);
-    if (this.pages.length < this.maxPages) {
+    if (this.pages.length < this.maxPages && !this.pages[this.pages.length - 1]?.last) {
       const page = this.pages[this.pages.length - 1];
       this.requestedPage$$.next(page.number + 1);
     } else {

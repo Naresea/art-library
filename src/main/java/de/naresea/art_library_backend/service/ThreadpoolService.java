@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 @Service
 public class ThreadpoolService {
 
-    private final ExecutorService exeutor = Executors.newFixedThreadPool(2);
+    private final ExecutorService exeutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
 
     public ExecutorService getExecutor() {
         return this.exeutor;

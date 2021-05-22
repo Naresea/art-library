@@ -1,17 +1,18 @@
 package de.naresea.art_library_backend.controller;
 
-import de.naresea.art_library_backend.model.dto.ImageDto;
-import de.naresea.art_library_backend.model.dto.ImageUpdateDto;
-import de.naresea.art_library_backend.model.dto.UploadResultDto;
+import de.naresea.art_library_backend.controller.model.ImageDto;
+import de.naresea.art_library_backend.controller.model.ImagePage;
+import de.naresea.art_library_backend.controller.model.ImageUpdateDto;
+import de.naresea.art_library_backend.controller.model.UploadResultDto;
 import de.naresea.art_library_backend.model.entity.ImageFile;
-import de.naresea.art_library_backend.model.entity.ImageTag;
-import de.naresea.art_library_backend.model.repository.ImageRepository;
-import de.naresea.art_library_backend.model.repository.ImageTagRepository;
+import de.naresea.art_library_backend.model.search.SearchDocument;
+import de.naresea.art_library_backend.service.ImageCrudService;
 import de.naresea.art_library_backend.service.ImageImportService;
 import de.naresea.art_library_backend.service.ProgressService;
+import de.naresea.art_library_backend.service.SearchService;
+import de.naresea.art_library_backend.service.model.ImageUpdate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -29,10 +29,10 @@ import java.util.stream.Collectors;
 public class ImageController {
 
     @Autowired
-    ImageRepository imageRepository;
+    private ImageCrudService imageCrudService;
 
     @Autowired
-    ImageTagRepository tagRepository;
+    private SearchService searchService;
 
     @Autowired
     private ImageImportService imageImportService;
@@ -51,54 +51,36 @@ public class ImageController {
 
     @GetMapping(params = { "page", "size" })
     public Page<ImageDto> getImages(@RequestParam("page") int page, @RequestParam("size") int size) {
-        var actualPageSize = Math.min(size, 100);
-        var pageable = PageRequest.of(page, actualPageSize);
-        return this.imageRepository.findAll(pageable).map(ImageDto::new);
+        return this.imageCrudService.getImagePage(page, size).map(ImageDto::new);
     }
 
-    @GetMapping(path = {"/search"}, params = {  "page", "size", "tags", "query", "categories" })
-    public Page<ImageDto> getImagesByTags(
+    @GetMapping(path = {"/search"}, params = {  "page", "size", "query" })
+    public ImagePage searchImages(
             @RequestParam("page") int page,
             @RequestParam("size") int size,
-            @RequestParam("tags") String[] tags,
-            @RequestParam("query") String query,
-            @RequestParam("categories") String[] categories
+            @RequestParam("query") String query
     ) {
-        var actualPageSize = Math.min(size, 100);
-        var pageable = PageRequest.of(page, actualPageSize);
-        if (query.equals("any")) {
-            if (categories != null && categories.length > 0) {
-                return this.imageRepository.findByTags_NameInAndCategoryIn(Arrays.asList(tags), Arrays.asList(categories), pageable)
-                        .map(ImageDto::new);
-            } else {
-                return this.imageRepository.findByTags_NameIn(Arrays.asList(tags), pageable)
-                        .map(ImageDto::new);
-            }
+        var searchResults = searchService.search(query, page, size);
+        if (searchResults.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        if (query.equals("all")) {
-            if (categories != null && categories.length > 0) {
-                return this.imageRepository.findByHasAllTagsAndCategegories(Arrays.asList(tags), (long) tags.length, Arrays.asList(categories), pageable)
-                        .map(ImageDto::new);
-            } else {
-                return this.imageRepository.findByHasAllTags(Arrays.asList(tags), (long) tags.length, pageable)
-                        .map(ImageDto::new);
-            }
+        var results = searchResults.get();
+
+        var images = this.imageCrudService.readImages(
+                results.getContent().stream()
+                        .map(SearchDocument::getId)
+                        .collect(Collectors.toSet())
+        );
+
+        if (images.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        if (query.equals("exact")) {
-            if (categories != null && categories.length > 0) {
-                return this.imageRepository.findByHasOnlyAllTagsAndCategories(Arrays.asList(tags), (long) tags.length, Arrays.asList(categories), pageable)
-                        .map(ImageDto::new);
-            } else {
-                return this.imageRepository.findByHasOnlyAllTags(Arrays.asList(tags), (long) tags.length, pageable)
-                        .map(ImageDto::new);
-            }
-        }
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        return new ImagePage(results, images.get());
     }
 
     @GetMapping(path = { "/{imageId}" })
     public ImageDto getImage(@PathVariable("imageId") Long imageId) {
-        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
+        final Optional<ImageFile> retrievedImage = imageCrudService.readImage(imageId);
         if (retrievedImage.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -108,7 +90,7 @@ public class ImageController {
 
     @GetMapping(path = {"/{imageId}/bin/{size}"})
     public void getBinaryContent(@PathVariable("imageId") Long imageId, @PathVariable("size") String size, HttpServletResponse response) throws IOException {
-        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
+        final Optional<ImageFile> retrievedImage = imageCrudService.readImage(imageId);
         if (retrievedImage.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -132,39 +114,17 @@ public class ImageController {
     @PatchMapping(path = {"/{imageId}"})
     @Transactional
     public void updateMetadata(@PathVariable("imageId") Long imageId, @RequestBody ImageUpdateDto updateDto) {
-        final Optional<ImageFile> retrievedImage = imageRepository.findById(imageId);
-        if (retrievedImage.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        var img = retrievedImage.get();
-
-        if (updateDto.getTags() != null ) {
-            var lowercaseTags = updateDto.getTags().stream().map(String::toLowerCase).collect(Collectors.toList());
-            var existingTags = tagRepository.findByNameIn(lowercaseTags);
-            var tagsToSave = lowercaseTags.stream()
-                    .filter(t -> existingTags.stream().noneMatch(et -> et.getName().equals(t)))
-                    .map(ImageTag::new)
-                    .collect(Collectors.toList());
-            var savedTags = tagRepository.saveAll(tagsToSave);
-            img.getTags().clear();
-            img.getTags().addAll(existingTags);
-            img.getTags().addAll(savedTags);
-        }
-        if (updateDto.getCategory() != null) {
-            img.setCategory(updateDto.getCategory());
-        }
-        if (updateDto.getDescription() != null) {
-            img.setDescription(updateDto.getDescription());
-        }
-        if (updateDto.getTitle() != null) {
-            img.setTitle(updateDto.getTitle());
-        }
-
-        imageRepository.save(img);
+        var update = new ImageUpdate(imageId, updateDto);
+        imageCrudService.updateImage(update);
     }
 
     @DeleteMapping(path = {"/{imageId}"})
     public void deleteImage(@PathVariable("imageId") Long imageId) {
-        imageRepository.deleteById(imageId);
+        imageCrudService.deleteImage(imageId);
+    }
+
+    @PostMapping(path = {"/update-search-index"})
+    public void updateSearchIndex() {
+        this.imageCrudService.updateSearchIndex();
     }
 }
