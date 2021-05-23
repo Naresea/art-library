@@ -1,25 +1,15 @@
 import {Component} from '@angular/core';
-import {BehaviorSubject, NEVER, timer} from "rxjs";
+import {BehaviorSubject} from "rxjs";
 import {AutoTagService} from "../services/auto-tag.service";
 import {TaggedElem} from "../models/tags.model";
-import {
-  catchError,
-  delay,
-  delayWhen,
-  filter,
-  map,
-  repeat,
-  retryWhen,
-  startWith,
-  switchMap,
-  take,
-  tap
-} from "rxjs/operators";
-import {UploadMetadata} from "../asset-upload/upload.model";
+import {delay, filter, map, repeat, startWith, switchMap, take, tap} from "rxjs/operators";
+
 import * as JSZip from "jszip";
 import {environment} from "../../environments/environment";
 import {BackendService} from "../services/backend.service";
 import {ProgressReport, Transfer, TransferState} from "../models/backend.model";
+
+type UploadMetadata = Record<string, {tags: Array<string>, category: string}>
 
 @Component({
   selector: 'app-upload',

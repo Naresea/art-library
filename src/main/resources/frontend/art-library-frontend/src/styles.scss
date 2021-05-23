@@ -1,7 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
 @import "~bootstrap/scss/bootstrap";
-@import "~ag-grid-community/dist/styles/ag-grid.css";
-@import "~ag-grid-community/dist/styles/ag-theme-alpine.css";
 
 body {
   width: 100vw;
@@ -9,22 +7,7 @@ body {
   overflow: hidden;
 }
 
-.tag-selected {
-  background-color: $primary;
-  color: $white;
-}
-
-ks-background .ng-overlay {
-  left: 16.5vw !important;
-  width: 83.5vw !important;
-}
-
-#modal-gallery-wrapper {
-  left: 16.5vw !important;
-  width: 83.5vw !important;
-}
-
-html, body { height: 100%; }
+html { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 .cursor-pointer {

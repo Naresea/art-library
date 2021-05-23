@@ -13,7 +13,6 @@ import {ImageEditSheetComponent} from './image-details/image-edit-sheet/image-ed
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import {MatBottomSheetModule} from "@angular/material/bottom-sheet";
-import {AngularMultiSelectModule} from "angular2-multiselect-dropdown";
 import {FormsModule} from "@angular/forms";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
@@ -41,7 +40,6 @@ import {EditorModule, TINYMCE_SCRIPT_SRC} from "@tinymce/tinymce-angular";
     MatButtonModule,
     MatIconModule,
     MatBottomSheetModule,
-    AngularMultiSelectModule,
     FormsModule,
     MatFormFieldModule,
     MatInputModule,

@@ -5,11 +5,8 @@ import {AppComponent} from './app.component';
 import {AppRoutingModule} from "./app-routing.module";
 import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 import {HttpClientModule, HttpClientXsrfModule} from "@angular/common/http";
-import {LazyLoadImageModule} from "ng-lazyload-image";
-import {NgMultiSelectDropDownModule} from "ng-multiselect-dropdown";
 import 'hammerjs';
 import 'mousetrap';
-import {GalleryModule} from '@ks89/angular-modal-gallery';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {MatButtonModule} from "@angular/material/button";
 import {MatToolbarModule} from "@angular/material/toolbar";
@@ -29,9 +26,6 @@ import {MatListModule} from "@angular/material/list";
     FontAwesomeModule,
     HttpClientModule,
     HttpClientXsrfModule.withOptions(),
-    LazyLoadImageModule,
-    NgMultiSelectDropDownModule.forRoot(),
-    GalleryModule.forRoot(),
     HammerModule,
     BrowserAnimationsModule,
     MatButtonModule,
