@@ -1,4 +1,4 @@
-<cdk-virtual-scroll-viewport #scroller [itemSize]="itemSize$ | async" class="content">
+<cdk-virtual-scroll-viewport #scroller [itemSize]="itemSize$ | async" class="h-100">
   <mat-list>
     <ng-container *cdkVirtualFor="let row of imageRows$ | async">
       <div class="d-flex justify-content-around overflow-hidden">

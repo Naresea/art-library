@@ -60,3 +60,8 @@ export enum ImageCategory {
   BATTLEMAP = 'battlemap',
   ARTWORK = 'artwork'
 }
+
+export interface UploadMetadata {
+  tags: Array<string>;
+  categories: Array<string>;
+}

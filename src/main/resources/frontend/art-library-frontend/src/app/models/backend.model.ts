@@ -9,3 +9,9 @@ export interface Transfer<T> {
   state: TransferState;
   result?: T;
 }
+
+export interface ProgressReport {
+  total: number;
+  success: number;
+  failed: number;
+}

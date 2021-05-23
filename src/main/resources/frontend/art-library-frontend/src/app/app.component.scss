@@ -1,12 +1,8 @@
-.searchbar {
-  opacity: 0;
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform;
+.toolbar {
+  height: 74px !important;
 }
 
-.searchbar.visible {
-  opacity: 1;
-  transform: translateY(-54px);
+.content-container {
+  height: calc(100vh - 74px) !important;
+  width: 100vw !important;
 }

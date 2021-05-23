@@ -1,0 +1,11 @@
+<div class="d-flex flex-column align-items-center justify-content-center w-100 h-100">
+  <div style="width: 100px; height: 100px; position: relative">
+    <mat-progress-spinner [mode]="'indeterminate'"></mat-progress-spinner>
+    <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;">
+      <div *ngIf="progress && progress >= 0">
+        {{progress.toFixed(2) + ' %'}}
+      </div>
+    </div>
+  </div>
+  <mat-label>{{step}}</mat-label>
+</div>

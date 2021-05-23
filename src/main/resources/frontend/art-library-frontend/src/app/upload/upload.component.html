@@ -1,1 +1,31 @@
-<p>upload works!</p>
+<mat-horizontal-stepper [linear]="true" class="h-100 w-100" #stepper>
+  <mat-step [completed]="hasSelectedFiles$ | async">
+    <ng-template matStepLabel>Add Files</ng-template>
+    <ng-container *ngIf="!(files$$ | async)">
+      <app-add-files (filesSelected)="readFiles($event)"></app-add-files>
+    </ng-container>
+    <ng-container *ngIf="files$$ | async as files">
+      <app-file-tree [files]="files"
+                     (selectionChange)="selectFiles($event)">
+      </app-file-tree>
+      <div class="d-flex align-items-center controls">
+        <button mat-fab color="warn" style="margin-right: 16px;" (tap)="files$$.next(undefined)">
+          <mat-icon>delete</mat-icon>
+        </button>
+        <button matStepperNext [disabled]="!(hasSelectedFiles$ | async)" (tap)="startUpload()" mat-fab color="primary">
+          <mat-icon>navigate_next</mat-icon>
+        </button>
+      </div>
+    </ng-container>
+  </mat-step>
+  <mat-step>
+    <ng-template matStepLabel>Upload</ng-template>
+    <ng-container *ngIf="!(uploadDone$$ | async); else success">
+      <app-upload-to-backend [progress]="uploadProgress$$ | async" [step]="uploadStep$$ | async">
+      </app-upload-to-backend>
+    </ng-container>
+    <ng-template #success>
+      <h3>Upload success!</h3>
+    </ng-template>
+  </mat-step>
+</mat-horizontal-stepper>

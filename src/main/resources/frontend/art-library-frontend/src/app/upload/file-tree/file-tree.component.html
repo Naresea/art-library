@@ -1,0 +1,18 @@
+<cdk-virtual-scroll-viewport itemSize="120" class="content">
+<mat-list class="h-100 w-100 overflow-auto">
+  <ng-container *cdkVirtualFor="let file of items">
+    <div class="overflow-hidden list-item-height" (tap)="updateCheck(file)">
+      <div class="d-flex align-items-center w-100">
+        <mat-checkbox style="margin-right: 16px;" [checked]="file.checked"></mat-checkbox>
+        <div class="d-flex flex-column flex-grow-1">
+          <div class="chip-list-height label" style="margin-bottom: 5px;">{{file.payload.name}}</div>
+          <mat-chip-list class="chip-list-height">
+            <mat-chip *ngFor="let tag of file.tags">{{tag}}</mat-chip>
+          </mat-chip-list>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</mat-list>
+</cdk-virtual-scroll-viewport>
+

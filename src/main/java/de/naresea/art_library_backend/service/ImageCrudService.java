@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,9 +68,45 @@ public class ImageCrudService {
         return result.map(imageFiles -> imageFiles.get(0));
     }
 
-    @Transactional
     public Optional<List<ImageFile>> createImages(Collection<ImageCreate> images) {
+        return this.createImages(images, null);
+    }
+
+    public Optional<List<ImageFile>> createImages(Collection<ImageCreate> images, String uuid) {
         var tags = this.ensureTagsCreate(images);
+
+        var success = new AtomicInteger(0);
+        var failed = new AtomicInteger(0);
+        var total = images.size();
+
+        var resultList = images.parallelStream()
+                .map(i -> {
+                    var processData = this.processingService.processImage(i.getImageFile());
+                    return this.getCreateImage(i, processData, tags).orElse(null);
+                })
+                .map(createImage -> {
+                    try {
+                        var saved = this.imageRepository.save(createImage);
+                        var suc = success.incrementAndGet();
+                        var fail = failed.get();
+                        if (uuid != null) {
+                            ProgressService.reportProgress(total, suc, fail, uuid);
+                        }
+                        this.addToSearch(Collections.singletonList(saved));
+                        return saved;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        var suc = success.get();
+                        var fail = failed.incrementAndGet();
+                        if (uuid != null) {
+                            ProgressService.reportProgress(total, suc, fail, uuid);
+                        }
+                        return null;
+                    }
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+        return Optional.of(resultList);
+
+        /*
         var processedImages = images.parallelStream().map(i -> {
             var processData = this.processingService.processImage(i.getImageFile());
             return this.getCreateImage(i, processData, tags).orElse(null);
@@ -102,7 +139,7 @@ public class ImageCrudService {
 
         var save = Utils.toList(this.imageRepository.saveAll(toSave));
         this.addToSearch(save);
-        return Optional.of(save);
+        return Optional.of(save);*/
     }
 
     public Optional<List<ImageFile>> readImages(Collection<Long> ids) {
@@ -112,7 +149,6 @@ public class ImageCrudService {
         return Optional.of(list);
     }
 
-    @Transactional
     public Optional<List<ImageFile>> updateImages(Collection<ImageUpdate> imageFiles) {
         var ids = imageFiles.stream().map(ImageUpdate::getId).collect(Collectors.toList());
         var images = Utils.toMap(this.imageRepository.findAllById(ids), ImageFile::getId);
@@ -128,7 +164,6 @@ public class ImageCrudService {
         return Optional.of(updated);
     }
 
-    @Transactional
     public Optional<List<ImageFile>> deleteImages(Collection<Long> imageIds) {
         var existingImages = Utils.toList(this.imageRepository.findAllById(imageIds));
         this.imageRepository.deleteAll(existingImages);
@@ -216,6 +251,7 @@ public class ImageCrudService {
         return ensureTags(tags);
     }
 
+    @Transactional
     private Map<String, ImageTag> ensureTags(List<String> tags) {
         var uniqueTags = new HashSet<>(tags);
         var existingTags = Utils.toMap(this.tagRepository.findByNameIn(uniqueTags), ImageTag::getName);

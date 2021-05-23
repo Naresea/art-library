@@ -11,9 +11,9 @@ export class BackendService {
 
   constructor(private readonly httpClient: HttpClient) { }
 
-  public create<T>(url: string, body: T): Observable<Transfer<T>> {
+  public create<U>(url: string, body: unknown): Observable<Transfer<U>> {
     return this.httpTransfer(
-      this.httpClient.post<T>(
+      this.httpClient.post<U>(
         url,
         body,
         {

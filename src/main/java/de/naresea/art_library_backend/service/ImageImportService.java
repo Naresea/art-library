@@ -93,7 +93,7 @@ public class ImageImportService {
             imageCreate.setImageFile(Optional.of(Paths.get(dir.getPath(), key).toFile()));
             return imageCreate;
         }).collect(Collectors.toList());
-        imageCrudService.createImages(imageCreates);
+        imageCrudService.createImages(imageCreates, uuid);
         ProgressService.reportProgress(meta.size(), meta.size(), 0, uuid);
         return true;
     }

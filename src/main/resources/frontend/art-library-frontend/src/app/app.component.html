@@ -1,4 +1,4 @@
-<mat-toolbar color="primary" class="d-flex align-items-center" style="height: 74px;">
+<mat-toolbar color="primary" class="d-flex align-items-center toolbar">
   <button mat-icon-button color="secondary" style="margin-right: 16px;" aria-label="Example icon-button with menu icon"
           (tap)="sidenav.toggle()">
     <mat-icon>menu</mat-icon>
@@ -9,16 +9,16 @@
   </mat-form-field>
 </mat-toolbar>
 
-<mat-sidenav-container class="h-100 w-100" hasBackdrop="true">
+<mat-sidenav-container class="content-container" hasBackdrop="true">
   <mat-sidenav #sidenav mode="over" style="min-width: 42%; max-width: 42%;">
     <mat-list>
       <mat-list-item [routerLink]="'/gallery'" (tap)="sidenav.close()">Browse</mat-list-item>
       <mat-list-item [routerLink]="'/upload'" (tap)="sidenav.close()">Upload</mat-list-item>
     </mat-list>
   </mat-sidenav>
-  <mat-sidenav-content class="overflow-hidden">
+  <mat-sidenav-content class="overflow-hidden d-flex flex-column">
 
-    <div style="position: relative">
+    <div style="position: relative; flex: 1 1 0;">
       <router-outlet></router-outlet>
     </div>
   </mat-sidenav-content>

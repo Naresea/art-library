@@ -21,7 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,10 +45,16 @@ public class ImageController {
         return new UploadResultDto(uuid);
     }
 
-    @GetMapping("/upload/{uuid}")
-    public ProgressService.ProgressReport getUploadProgress(@RequestParam("uuid") String uuid) {
+    @GetMapping("/progress/{uuid}")
+    public ProgressService.ProgressReport getUploadProgress(@PathVariable("uuid") String uuid) {
         return ProgressService.getProgress(uuid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElse(new ProgressService.ProgressReport(
+                        1,
+                        0,
+                        0,
+                        uuid,
+                        new Date()
+                ));
     }
 
     @GetMapping(params = { "page", "size" })
@@ -60,6 +68,10 @@ public class ImageController {
             @RequestParam("size") int size,
             @RequestParam("query") String query
     ) {
+        if (query == null || query.trim().isEmpty()) {
+            return new ImagePage(this.getImages(page, size));
+        }
+
         var searchResults = searchService.search(query, page, size);
         if (searchResults.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
