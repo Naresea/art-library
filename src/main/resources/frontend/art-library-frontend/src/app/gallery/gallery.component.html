@@ -1,0 +1,7 @@
+<app-infinite-image-gallery (imageSelected)="selectedImage$$.next($event)">
+</app-infinite-image-gallery>
+
+<ng-container *ngIf="selectedImage$$ | async as image">
+  <app-image-details [image]="image" (imageUpdate)="updateImage($event)" (close)="selectedImage$$.next(undefined)">
+  </app-image-details>
+</ng-container>

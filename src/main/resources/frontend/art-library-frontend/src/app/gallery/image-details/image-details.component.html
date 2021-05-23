@@ -1,0 +1,22 @@
+<div class="background d-flex flex-column">
+
+  <div class="d-flex align-items-center justify-content-around quick-buttons">
+    <div class="flex-grow-1"></div>
+    <button mat-mini-fab color="white" class="mx-2" (tap)="downloadImage()">
+      <mat-icon>download</mat-icon>
+    </button>
+    <button mat-mini-fab color="white" (tap)="closeScreen()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- image itself -->
+  <div class="d-flex flex-grow-1 flex-direction-row align-items-center justify-content-around">
+    <img *ngIf="image" [src]="image.bigUrl"/>
+  </div>
+
+  <!-- Edit menu -->
+  <button mat-fab color="primary" class="menu-button" (tap)="openEditSheet()">
+    <mat-icon>edit</mat-icon>
+  </button>
+</div>

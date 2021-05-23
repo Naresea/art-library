@@ -20,18 +20,13 @@ export class ImageService implements OnDestroy {
   private readonly imagePage$$ = new ReplaySubject<Page<ImageMetadata> | undefined>(1);
   private pageSize = 100;
   private page = 0;
-  private tags: Array<string> = [];
-  private categories: Array<string> = [];
   private isFirstPage = true;
   private isLastPage = false;
-  private query: QueryMethod = QueryMethod.HAS_ALL_OF;
   private luceneQuery?: string;
 
   public readonly imagePage$ = this.imagePage$$.asObservable();
 
-  constructor(private readonly backendService: BackendService) {
-    this.searchImpl(QueryMethod.HAS_ALL_OF);
-  }
+  constructor(private readonly backendService: BackendService) {}
 
   public ngOnDestroy(): void {
     this.destroy$$.next();
@@ -45,14 +40,6 @@ export class ImageService implements OnDestroy {
     this.isFirstPage = true;
     this.imagePage$$.next(undefined);
     this.searchLuceneImpl(query);
-  }
-
-  public search(query: QueryMethod, tags: Array<string>, category: Array<string>): void {
-    this.page = 0;
-    this.isLastPage = false;
-    this.isFirstPage = true;
-    this.imagePage$$.next(undefined);
-    this.searchImpl(query, tags, category);
   }
 
   public updateImage(image: ImageMetadataUpdate): void {
@@ -73,7 +60,7 @@ export class ImageService implements OnDestroy {
   }
 
   public getPage(pageNumber: number): void {
-    if (!this.luceneQuery) {
+    if (this.luceneQuery == null) {
       return;
     }
     this.page = pageNumber;
@@ -81,30 +68,11 @@ export class ImageService implements OnDestroy {
   }
 
   public nextPage(): void {
+    if (this.luceneQuery == null) {
+      return;
+    }
     this.page++;
-    this.searchImpl(this.query, this.tags, this.categories);
-  }
-
-  private searchImpl(query: QueryMethod, tags?: Array<string>, categories?: Array<string>): void {
-    this.tags = tags ?? [];
-    this.categories = categories ?? [];
-    this.query = query;
-    const url =`${environment.apiUrl}/images/search?query=${this.query}&page=${this.page}&size=${this.pageSize}&tags=${this.tags.join(',')}&categories=${this.categories.join(',')}`;
-    this.backendService.read<Page<ImageMetadata>>(url)
-      .pipe(
-        filter((res) => res.state === TransferState.DONE && !!res.result),
-        take(1),
-        takeUntil(this.destroy$$)
-      ).subscribe((pageTransfer) => {
-        const page = pageTransfer.result;
-        if (!page) {
-          return;
-        }
-        this.isFirstPage = page.first;
-        this.isLastPage = page.last;
-        this.page = page.number;
-        this.imagePage$$.next(page);
-      });
+    this.searchLuceneImpl(this.luceneQuery);
   }
 
   private searchLuceneImpl(query: string): void {

@@ -1,40 +1,29 @@
-import {Component, ElementRef, ViewChild} from '@angular/core';
-import {Router} from "@angular/router";
-import {KNOWN_ROUTES} from "./app-routing.module";
+import {ChangeDetectionStrategy, Component, OnInit} from '@angular/core';
 import {ImageService} from "./services/image.service";
-import {ReplaySubject} from "rxjs";
-import {debounceTime} from "rxjs/operators";
-import {QueryMethod} from "./models/image.model";
+import {BehaviorSubject} from "rxjs";
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
-  @ViewChild('searchbar', {read: ElementRef})
-  public searchBar?: ElementRef;
+  public searchVisible$$ = new BehaviorSubject<boolean>(false);
 
-  public readonly routes = KNOWN_ROUTES;
-
-  private readonly searchTerm$$ = new ReplaySubject<string>(1);
-  private searchTerm$ = this.searchTerm$$.pipe(
-    debounceTime(500)
-  );
-
-  public get isInBrowse() {
-    return this.router.url.startsWith(this.routes.browse);
+  public toggleSearch(): void {
+    const current = this.searchVisible$$.getValue();
+    this.searchVisible$$.next(!current);
   }
 
-  public search(): void {
-    if (this.searchBar && this.searchBar.nativeElement) {
-      const text = this.searchBar.nativeElement.value;
-      this.searchTerm$$.next(text);
-    }
+  constructor(private readonly imageService: ImageService) {}
+
+  public ngOnInit(): void {
+    this.imageService.searchLucene('');
   }
 
-  constructor(private readonly router: Router, private readonly imageService: ImageService) {
-    this.searchTerm$.subscribe((term) => this.imageService.searchLucene(term));
+  public searchFor(search: string): void {
+    this.imageService.searchLucene(search);
   }
 }

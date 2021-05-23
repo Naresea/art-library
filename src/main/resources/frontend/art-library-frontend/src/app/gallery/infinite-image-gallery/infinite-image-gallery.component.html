@@ -1,0 +1,23 @@
+<cdk-virtual-scroll-viewport #scroller [itemSize]="itemSize$ | async" class="content">
+  <mat-list>
+    <ng-container *cdkVirtualFor="let row of imageRows$ | async">
+      <div class="d-flex justify-content-around overflow-hidden">
+        <ng-container *ngFor="let image of row">
+          <ng-container *ngIf="itemSize$ | async as size">
+            <div class="p-2" [style.width.px]="size" [style.height.px]="size">
+              <mat-card class="h-100 w-100 cursor-pointer" (tap)="imageSelected.emit(image)">
+                <mat-card-content>
+                  <img [src]="image.medUrl"/>
+                </mat-card-content>
+              </mat-card>
+            </div>
+          </ng-container>
+        </ng-container>
+      </div>
+    </ng-container>
+    <div class="spinner-item" *ngIf="isLoading$ | async">
+      <mat-progress-spinner [mode]="'indeterminate'" [diameter]="50">
+      </mat-progress-spinner>
+    </div>
+  </mat-list>
+</cdk-virtual-scroll-viewport>

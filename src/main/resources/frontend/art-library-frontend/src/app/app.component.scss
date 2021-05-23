@@ -1,0 +1,12 @@
+.searchbar {
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.searchbar.visible {
+  opacity: 1;
+  transform: translateY(-54px);
+}

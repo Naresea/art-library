@@ -27,6 +27,13 @@ export interface ImageMetadata {
   tags: Array<ImageTagMetadata>;
 }
 
+export interface ImageGalleryData extends ImageMetadata {
+  smallUrl: string;
+  medUrl: string;
+  bigUrl: string;
+  rawUrl: string;
+}
+
 export interface ImageMetadataUpdate {
   id: number;
   title?: string;

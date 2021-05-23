@@ -1,19 +1,25 @@
-<nav style="max-height: 88px; min-height: 88px;" class="navbar navbar-expand navbar-light bg-light p-4">
-  <a class="navbar-brand" href="#">ArtLibrary</a>
+<mat-toolbar color="primary" class="d-flex align-items-center" style="height: 74px;">
+  <button mat-icon-button color="secondary" style="margin-right: 16px;" aria-label="Example icon-button with menu icon"
+          (tap)="sidenav.toggle()">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <mat-form-field class="flex-grow-1 ml-4" appearance="standard">
+    <mat-label>Search</mat-label>
+    <input #searchField matInput (change)="searchFor(searchField.value)">
+  </mat-form-field>
+</mat-toolbar>
 
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item active">
-        <a class="nav-link" [routerLink]="routes.browse">Browse</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" [routerLink]="routes.upload">Upload</a>
-      </li>
-    </ul>
+<mat-sidenav-container class="h-100 w-100" hasBackdrop="true">
+  <mat-sidenav #sidenav mode="over" style="min-width: 42%; max-width: 42%;">
+    <mat-list>
+      <mat-list-item [routerLink]="'/gallery'" (tap)="sidenav.close()">Browse</mat-list-item>
+      <mat-list-item [routerLink]="'/upload'" (tap)="sidenav.close()">Upload</mat-list-item>
+    </mat-list>
+  </mat-sidenav>
+  <mat-sidenav-content class="overflow-hidden">
 
-    <div *ngIf="isInBrowse" class="form-inline my-2 my-lg-0 d-flex">
-      <input #searchbar class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" (change)="search()">
+    <div style="position: relative">
+      <router-outlet></router-outlet>
     </div>
-  </div>
-</nav>
-<router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>
