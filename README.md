@@ -8,8 +8,7 @@ so *do not run it on the public internet* without extra protection (e.g. an Ngin
 Also, please don't upload any super-important / confidential / private material.
 
 ## Credits
-All the beautiful token thumbnails you see in the screenshots below are made by Jan Loos on Patreon.
-If you like his art, you can find him here: https://www.patreon.com/onlinetabletop/posts
+TODO: mention artist from screenshots
 
 ## What is it?
 During the COVID-19 pandemic I started collecting heaps and heaps of artwork, tokens and battlemaps
