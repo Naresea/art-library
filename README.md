@@ -8,13 +8,13 @@ so *do not run it on the public internet* without extra protection (e.g. an Ngin
 Also, please don't upload any super-important / confidential / private material.
 
 ## Credits
-TODO: mention artist from screenshots
+All the beautiful token thumbnails you see in the screenshots below are made by Jan Loos on Patreon.
+If you like his art, you can find him here: https://www.patreon.com/onlinetabletop/posts
 
 ## What is it?
 During the COVID-19 pandemic I started collecting heaps and heaps of artwork, tokens and battlemaps
 for online playing P&P games like Dungeons & Dragons 5, Pathfinder 2, Splittermond and Shadowrun with my friends.
-You could say I became addicted to Patreon and with several thousand tokens and maps at hand I figured it was time
-to somehow organize them.
+I follow several artists on Patreon and with hundreds of images I needed a way to organize the,
 
 I wanted some software that I could host alongside my own Foundry VTT server, that offered me a quick search
 function similar to Google's image search and that I could use from both my smartphone and my desktop computer.
@@ -44,8 +44,6 @@ but that's not yet decided.
 - The frontend pretends that multiple categories are possible. That is wanted in the future, but atm the backend and database only save the first in the list
 
 ## Screenshots
-
-TODO: include screenshots
 
 ### Main Page
 ![image](screenshots/main-app.JPG)
