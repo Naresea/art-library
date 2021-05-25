@@ -4,6 +4,7 @@ import de.naresea.art_library_backend.model.entity.ImageFile;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,7 +14,7 @@ public class ImageDto {
     Long id;
     String name;
     String type;
-    String category;
+    Collection<ImageCategoryDto> categories;
     String description;
     String title;
     List<ImageTagDto> tags;
@@ -22,7 +23,7 @@ public class ImageDto {
         this.id = image.getId();
         this.name = image.getName();
         this.type = image.getType();
-        this.category = image.getCategory();
+        this.categories = image.getCategories().stream().map(ImageCategoryDto::new).collect(Collectors.toList());
         this.tags = image.getTags().stream().map(ImageTagDto::new).collect(Collectors.toList());
         this.description = image.getDescription();
         this.title = image.getTitle();

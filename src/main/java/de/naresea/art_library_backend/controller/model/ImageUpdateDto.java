@@ -14,13 +14,13 @@ import java.util.Collection;
 @Jacksonized
 @Builder()
 public class ImageUpdateDto {
-    String category;
+    Collection<String> categories;
     String description;
     String title;
     Collection<String> tags;
 
     public ImageUpdateDto(ImageUpdateDto src) {
-        this.category = src.category;
+        this.categories = src.categories;
         this.description = src.description;
         this.title = src.title;
         this.tags = src.getTags();

@@ -17,11 +17,18 @@ export interface ImageTagMetadata {
   name: string;
 }
 
+export interface ImageCategoryMetadata {
+  // id might be undefined if categories were changed
+  // but entity wasn't refetched from database yet
+  id?: number;
+  name: string;
+}
+
 export interface ImageMetadata {
   id: number;
   name: string;
   title?: string;
-  category?: string;
+  categories: Array<ImageCategoryMetadata>;
   description?: string;
   type: string;
   tags: Array<ImageTagMetadata>;
@@ -37,7 +44,7 @@ export interface ImageGalleryData extends ImageMetadata {
 export interface ImageMetadataUpdate {
   id: number;
   title?: string;
-  category?: string;
+  categories?: Array<string>;
   description?: string;
   tags?: Array<string>;
 }

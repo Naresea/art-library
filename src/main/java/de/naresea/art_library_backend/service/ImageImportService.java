@@ -83,10 +83,10 @@ public class ImageImportService {
         var imageCreates = meta.keySet().stream().map(key -> {
             var value = meta.get(key);
             var tagsForKey = value != null ? value.getTags() : new HashSet<String>();
-            var category = value != null ? value.getCategory() : "";
+            var categories = value != null ? value.getCategories() : new HashSet<String>();
             var imageCreate = new ImageCreate();
             imageCreate.setTags(tagsForKey);
-            imageCreate.setCategory(category);
+            imageCreate.setCategories(categories);
             imageCreate.setTitle(key);
             imageCreate.setName(UUID.randomUUID().toString());
             imageCreate.setType("image/webp");

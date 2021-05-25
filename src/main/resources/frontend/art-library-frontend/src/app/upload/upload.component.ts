@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {BehaviorSubject} from "rxjs";
 import {AutoTagService} from "../services/auto-tag.service";
 import {TaggedElem} from "../models/tags.model";
@@ -8,13 +8,13 @@ import * as JSZip from "jszip";
 import {environment} from "../../environments/environment";
 import {BackendService} from "../services/backend.service";
 import {ProgressReport, Transfer, TransferState} from "../models/backend.model";
-
-type UploadMetadata = Record<string, {tags: Array<string>, category: string}>
+import {UploadMetadata} from "../models/image.model";
 
 @Component({
   selector: 'app-upload',
   templateUrl: './upload.component.html',
-  styleUrls: ['./upload.component.scss']
+  styleUrls: ['./upload.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UploadComponent {
 
@@ -95,11 +95,11 @@ export class UploadComponent {
   }
 
   private buildFileMetadata(files: Array<TaggedElem<File>>): UploadMetadata {
-    const category = 'uncategorized';
+    const categories = ['uncategorized'];
     const tags: Array<string> = [];
 
     return files.reduce((accu, file) => {
-      accu[file.payload.name] = { tags: Array.from(new Set([...file.tags, ...tags])), category };
+      accu[file.payload.name] = { tags: Array.from(new Set([...file.tags, ...tags])), categories };
       return accu;
     }, {} as any);
   }

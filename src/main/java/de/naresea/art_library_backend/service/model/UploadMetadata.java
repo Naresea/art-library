@@ -11,5 +11,5 @@ import java.util.List;
 @Builder
 public class UploadMetadata {
     List<String> tags;
-    String category;
+    List<String> categories;
 }

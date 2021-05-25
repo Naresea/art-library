@@ -1,6 +1,9 @@
 package de.naresea.art_library_backend.model.entity;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.Collections;
@@ -9,10 +12,10 @@ import java.util.Set;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "image_tags")
+@Table(name = "image_categories")
 @Getter
 @Setter
-public class ImageTag extends AbstractTimestampEntity {
+public class ImageCategory extends AbstractTimestampEntity {
 
     @Id
     @Column(name = "id")
@@ -25,7 +28,7 @@ public class ImageTag extends AbstractTimestampEntity {
     @ManyToMany(mappedBy = "tags")
     Set<ImageFile> images = Collections.emptySet();
 
-    public ImageTag(String name) {
+    public ImageCategory(String name) {
         this.name = name;
     }
 }

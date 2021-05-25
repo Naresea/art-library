@@ -10,9 +10,9 @@ import java.util.Optional;
 public class ImageCreate {
     String name;
     String type;
-    String category;
     String description;
     String title;
+    Collection<String> categories;
     Collection<String> tags;
     Optional<File> imageFile;
 }

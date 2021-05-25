@@ -1,7 +1,9 @@
 package de.naresea.art_library_backend.service;
 
+import de.naresea.art_library_backend.model.entity.ImageCategory;
 import de.naresea.art_library_backend.model.entity.ImageFile;
 import de.naresea.art_library_backend.model.entity.ImageTag;
+import de.naresea.art_library_backend.model.repository.ImageCategoryRepository;
 import de.naresea.art_library_backend.model.repository.ImageRepository;
 import de.naresea.art_library_backend.model.repository.ImageTagRepository;
 import de.naresea.art_library_backend.model.search.SearchDocument;
@@ -30,6 +32,9 @@ public class ImageCrudService {
 
     @Autowired
     private ImageTagRepository tagRepository;
+
+    @Autowired
+    private ImageCategoryRepository categoryRepository;
 
     @Autowired
     private SearchService searchService;
@@ -74,6 +79,7 @@ public class ImageCrudService {
 
     public Optional<List<ImageFile>> createImages(Collection<ImageCreate> images, String uuid) {
         var tags = this.ensureTagsCreate(images);
+        var categories = this.ensureCategoriesCreate(images);
 
         var success = new AtomicInteger(0);
         var failed = new AtomicInteger(0);
@@ -82,8 +88,9 @@ public class ImageCrudService {
         var resultList = images.parallelStream()
                 .map(i -> {
                     var processData = this.processingService.processImage(i.getImageFile());
-                    return this.getCreateImage(i, processData, tags).orElse(null);
+                    return this.getCreateImage(i, processData, tags, categories).orElse(null);
                 })
+                .filter(Objects::nonNull)
                 .map(createImage -> {
                     try {
                         var saved = this.imageRepository.save(createImage);
@@ -105,41 +112,6 @@ public class ImageCrudService {
                     }
                 }).filter(Objects::nonNull).collect(Collectors.toList());
         return Optional.of(resultList);
-
-        /*
-        var processedImages = images.parallelStream().map(i -> {
-            var processData = this.processingService.processImage(i.getImageFile());
-            return this.getCreateImage(i, processData, tags).orElse(null);
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-
-        var hashSet = new HashSet<String>();
-        var cleanedList = new ArrayList<ImageFile>(processedImages.size());
-        for (var processed: processedImages) {
-            if (hashSet.contains(processed.getImagehash())) {
-                System.err.println("Found duplicate file in upload, skipping: " + processed.getTitle());
-            } else {
-                hashSet.add(processed.getImagehash());
-                cleanedList.add(processed);
-            }
-        }
-
-        var hashes = cleanedList.stream().map(ImageFile::getImagehash).collect(Collectors.toSet());
-        var duplicates = this.imageRepository.findAllByImagehashIn(hashes)
-                .stream()
-                .map(ImageFile::getImagehash)
-                .collect(Collectors.toSet());
-
-        var groups = cleanedList.stream().collect(Collectors.partitioningBy(i -> duplicates.contains(i.getImagehash())));
-        var toSave = groups.get(false);
-        var toLog = groups.get(true);
-
-        if (!toLog.isEmpty()) {
-            System.err.println("Skipping upload of duplicate image files: " + toLog.stream().map(ImageFile::getTitle).collect(Collectors.toList()));
-        }
-
-        var save = Utils.toList(this.imageRepository.saveAll(toSave));
-        this.addToSearch(save);
-        return Optional.of(save);*/
     }
 
     public Optional<List<ImageFile>> readImages(Collection<Long> ids) {
@@ -153,9 +125,10 @@ public class ImageCrudService {
         var ids = imageFiles.stream().map(ImageUpdate::getId).collect(Collectors.toList());
         var images = Utils.toMap(this.imageRepository.findAllById(ids), ImageFile::getId);
         var tags = this.ensureTagsUpdate(imageFiles);
+        var categories = this.ensureCategoriesUpdate(imageFiles);
 
         var updates = imageFiles.stream()
-                .map(imageUpdate -> this.mapUpdate(images, tags, imageUpdate).orElse(null))
+                .map(imageUpdate -> this.mapUpdate(images, tags, categories, imageUpdate).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
@@ -190,17 +163,23 @@ public class ImageCrudService {
         doc.setName(imageFile.getName());
         doc.setId(imageFile.getId());
         doc.setTags(imageFile.getTags().stream().map(ImageTag::getName).collect(Collectors.toSet()));
-        doc.setCategories(Collections.singletonList(imageFile.getCategory()));
+        doc.setCategories(imageFile.getCategories().stream().map(ImageCategory::getName).collect(Collectors.toSet()));
         doc.setTitle(imageFile.getTitle());
         return doc;
     }
 
-    private Optional<ImageFile> getCreateImage(ImageCreate i, Optional<ImageProcessData> processData, Map<String, ImageTag> tags) {
+    private Optional<ImageFile> getCreateImage(
+            ImageCreate i,
+            Optional<ImageProcessData> processData,
+            Map<String, ImageTag> tags,
+            Map<String, ImageCategory> categories
+    ) {
         if (i == null || tags == null) {
             return Optional.empty();
         }
 
         var dbTags = i.getTags().stream()
+                .map(String::toLowerCase)
                 .map(tags::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -211,7 +190,13 @@ public class ImageCrudService {
         basicImageFile.setName(i.getName());
         basicImageFile.setType(i.getType());
         basicImageFile.setTags(dbTags);
-        basicImageFile.setCategory(i.getCategory());
+        basicImageFile.setCategories(
+                i.getCategories().stream()
+                        .map(Utils::capitalize)
+                        .map(categories::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet())
+        );
 
         if (processData.isPresent()) {
             var data = processData.get();
@@ -225,17 +210,18 @@ public class ImageCrudService {
         return Optional.of(basicImageFile);
     }
 
-    private Optional<ImageFile> mapUpdate(Map<Long, ImageFile> images, Map<String, ImageTag> tags, ImageUpdate imageUpdate) {
+    private Optional<ImageFile> mapUpdate(Map<Long, ImageFile> images, Map<String, ImageTag> tags, Map<String, ImageCategory> categories, ImageUpdate imageUpdate) {
         var img = images.get(imageUpdate.getId());
         if (img == null) {
             return Optional.empty();
         }
         var tagsForImg = imageUpdate.getTags().stream()
+                .map(String::toLowerCase)
                 .map(tags::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         img.setTags(new HashSet<>(tagsForImg));
-        img.setCategory(imageUpdate.getCategory());
+        img.setCategories(imageUpdate.getCategories().stream().map(Utils::capitalize).map(categories::get).filter(Objects::nonNull).collect(Collectors.toSet()));
         img.setTitle(imageUpdate.getTitle());
         img.setDescription(imageUpdate.getDescription());
         return Optional.of(img);
@@ -251,14 +237,35 @@ public class ImageCrudService {
         return ensureTags(tags);
     }
 
+    private Map<String, ImageCategory> ensureCategoriesCreate(Collection<ImageCreate> imageFiles) {
+        var categories = Utils.flatten(imageFiles.stream().map(ImageCreate::getCategories).collect(Collectors.toList()));
+        return ensureCategories(categories);
+    }
+
+    private Map<String, ImageCategory> ensureCategoriesUpdate(Collection<ImageUpdate> imageFiles) {
+        var categories = Utils.flatten(imageFiles.stream().map(ImageUpdate::getCategories).collect(Collectors.toList()));
+        return ensureCategories(categories);
+    }
+
     @Transactional
     private Map<String, ImageTag> ensureTags(List<String> tags) {
-        var uniqueTags = new HashSet<>(tags);
+        var uniqueTags = tags.stream().map(String::toLowerCase).collect(Collectors.toSet());
         var existingTags = Utils.toMap(this.tagRepository.findByNameIn(uniqueTags), ImageTag::getName);
         var tagsToAdd = uniqueTags.stream().filter(t ->
                 !existingTags.containsKey(t)
         ).map(ImageTag::new).collect(Collectors.toList());
         this.tagRepository.saveAll(tagsToAdd).forEach(t -> existingTags.put(t.getName(), t));
         return existingTags;
+    }
+
+    @Transactional
+    private Map<String, ImageCategory> ensureCategories(List<String> categories) {
+        var uniqueCategories = categories.stream().map(Utils::capitalize).collect(Collectors.toSet());
+        var existingCategories = Utils.toMap(this.categoryRepository.findByNameIn(uniqueCategories), ImageCategory::getName);
+        var categoriesToAdd = uniqueCategories.stream().filter(t ->
+                !existingCategories.containsKey(t)
+        ).map(ImageCategory::new).collect(Collectors.toList());
+        this.categoryRepository.saveAll(categoriesToAdd).forEach(t -> existingCategories.put(t.getName(), t));
+        return existingCategories;
     }
 }

@@ -41,8 +41,14 @@ export class ImageDetailsComponent implements OnDestroy {
     this.sheet.afterDismissed().pipe(
       takeUntil(this.destroy$$)
     ).subscribe((result) => {
-      console.log('Received update: ', result);
       if (result != null) {
+        const meta = result as ImageMetadataUpdate;
+        if (this.image) {
+          this.image.title = meta.title ?? this.image.title;
+          this.image.description = meta.description ?? this.image.description;
+          this.image.tags = meta.tags?.map((t, id) => ({id: id + 1, name: t})) ?? this.image.tags;
+          this.image.categories = meta.categories?.map((c, id) => ({id: id + 1, name: c})) ?? this.image.categories;
+        }
         this.imageUpdate.emit(result as ImageMetadataUpdate);
       }
     });

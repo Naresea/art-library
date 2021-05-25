@@ -51,7 +51,7 @@ export class ImageEditSheetComponent {
       this.imageId = data.activeImage.id;
       this.imageTitle = data.activeImage.title ?? '';
       this.imageDescription = data.activeImage.description ?? '';
-      this.selectedCategories = data.activeImage.category ? [{id: 1, label: data.activeImage.category}] : [];
+      this.selectedCategories = data.activeImage.categories.filter(c => c.id).map(c => ({id: c.id!, label: c.name}));
       this.selectedTags = data.activeImage.tags.filter(t => t.id).map(t => ({id: t.id!, label: t.name}));
     }
   }
@@ -67,7 +67,7 @@ export class ImageEditSheetComponent {
     const update: ImageMetadataUpdate = {
       id: this.imageId,
       title: this.imageTitle,
-      category: this.selectedCategories[0]?.label,
+      categories: this.selectedCategories.map(c => c.label),
       description: this.imageDescription,
       tags: this.selectedTags.map(t => t.label)
     };
