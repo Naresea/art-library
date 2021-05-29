@@ -13,7 +13,7 @@ export class ImageService implements OnDestroy {
 
 
   public static getImageUrl(img: ImageMetadata, size: ImageSize): string {
-    return `${environment.apiUrl}/images/${img.id}/bin/${size}`;
+    return `${environment.apiUrl}/images/${img.id}/bin/${size}/${encodeURI(img.title ?? 'unknown')}`;
   }
 
   private readonly destroy$$ = new Subject<void>();

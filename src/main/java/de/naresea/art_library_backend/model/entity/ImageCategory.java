@@ -25,6 +25,9 @@ public class ImageCategory extends AbstractTimestampEntity {
     @Column(name = "name", unique = true, nullable = false)
     private String name;
 
+    @Column()
+    private boolean showInNavigation;
+
     @ManyToMany(mappedBy = "tags")
     Set<ImageFile> images = Collections.emptySet();
 

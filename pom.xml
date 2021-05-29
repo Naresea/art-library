@@ -42,17 +42,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Spring Security for authentication -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Jackson to handle JSON in Java -->
 
         <dependency>

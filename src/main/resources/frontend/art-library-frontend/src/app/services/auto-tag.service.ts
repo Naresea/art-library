@@ -25,9 +25,17 @@ export class AutoTagService {
   }
 
   private guessTagsForFile<T>(elem: TagGuessElem<T>, knownTags: Array<string>): TaggedElem<T> {
+    // remove file ending
     const fileName = elem.name.replace(/\.[a-zA-Z]+$/, '');
+    // split on typical split characters in filenames
     const fileNameChunks = fileName.split(/(\s+|\s*\.+\s*|\s*-+\s*|\s*_+\s*)/g);
-    const potentialTags = fileNameChunks
+    // split resulting chunks into camelcase if applicable
+    const decamelizedChunks = fileNameChunks.map(chunk => this.splitCamelCase(chunk)).reduce((accu, curr) => {
+      accu.push(...curr);
+      return accu;
+    }, []);
+
+    const potentialTags = decamelizedChunks
       .map(c => this.couldBeTag(c))
       .filter((c: string | undefined): c is string => c !== undefined);
     const tags = this.mapPotentialTagsToTags(potentialTags, knownTags);
@@ -71,5 +79,10 @@ export class AutoTagService {
         .sort((a, b) => a.distance - b?.distance)[0];
       return (fittingTag?.tag ?? potentialTag).toLowerCase();
     });
+  }
+
+  private splitCamelCase(camelCaseWord: string): Array<string> {
+    const upperCamelCase = camelCaseWord.substr(0, 1).toUpperCase() + camelCaseWord.substring(1);
+    return upperCamelCase.split(/(?=[A-Z])/).map(word => word.toLowerCase());
   }
 }

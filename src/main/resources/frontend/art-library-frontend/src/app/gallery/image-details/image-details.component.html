@@ -1,6 +1,6 @@
-<div class="background d-flex flex-column">
-
+<div *ngIf="image" class="background d-flex flex-column">
   <div class="d-flex align-items-center justify-content-around quick-buttons">
+    <h2 class="m-0">{{image.title}}</h2>
     <div class="flex-grow-1"></div>
     <button mat-mini-fab color="white" class="mx-2" (tap)="downloadImage()">
       <mat-icon>download</mat-icon>

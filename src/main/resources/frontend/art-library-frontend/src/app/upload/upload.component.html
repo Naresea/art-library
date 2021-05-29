@@ -12,6 +12,9 @@
         <button mat-fab color="warn" style="margin-right: 16px;" (tap)="files$$.next(undefined)">
           <mat-icon>delete</mat-icon>
         </button>
+        <button mat-fab color="accent" style="margin-right: 16px;" (tap)="editMetadata()">
+          <mat-icon>edit</mat-icon>
+        </button>
         <button matStepperNext [disabled]="!(hasSelectedFiles$ | async)" (tap)="startUpload()" mat-fab color="primary">
           <mat-icon>navigate_next</mat-icon>
         </button>

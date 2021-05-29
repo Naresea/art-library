@@ -5,14 +5,11 @@ import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
-@Jacksonized
 @Builder
-public class UploadMetadata {
+@Jacksonized
+public class UploadMetadataFile {
     List<String> tags;
     List<String> categories;
-    String description;
-    Map<String, UploadMetadataFile> files;
 }

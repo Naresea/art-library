@@ -1,14 +1,16 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {BehaviorSubject} from "rxjs";
+import {ChangeDetectionStrategy, Component, OnDestroy} from '@angular/core';
+import {BehaviorSubject, Subject} from "rxjs";
 import {AutoTagService} from "../services/auto-tag.service";
 import {TaggedElem} from "../models/tags.model";
-import {delay, filter, map, repeat, startWith, switchMap, take, tap} from "rxjs/operators";
+import {delay, filter, map, repeat, startWith, switchMap, take, takeUntil, tap} from "rxjs/operators";
 
 import * as JSZip from "jszip";
 import {environment} from "../../environments/environment";
 import {BackendService} from "../services/backend.service";
 import {ProgressReport, Transfer, TransferState} from "../models/backend.model";
 import {UploadMetadata} from "../models/image.model";
+import {MatBottomSheet, MatBottomSheetRef} from "@angular/material/bottom-sheet";
+import {UploadEditData, UploadEditSheetComponent} from "./upload-edit-sheet/upload-edit-sheet.component";
 
 @Component({
   selector: 'app-upload',
@@ -16,7 +18,7 @@ import {UploadMetadata} from "../models/image.model";
   styleUrls: ['./upload.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UploadComponent {
+export class UploadComponent implements OnDestroy {
 
   private isUploading = false;
 
@@ -30,10 +32,20 @@ export class UploadComponent {
     startWith(false)
   )
 
+  private readonly destroy$$ = new Subject<void>();
+  private sheet?: MatBottomSheetRef<unknown, unknown>;
+  private uploadMetadata?: UploadEditData;
+
   constructor(
     private readonly autoTagService: AutoTagService,
-    private readonly backendService: BackendService
+    private readonly backendService: BackendService,
+    private readonly matBottomSheet: MatBottomSheet
   ) { }
+
+  public ngOnDestroy(): void {
+    this.destroy$$.next();
+    this.destroy$$.complete();
+  }
 
   public async readFiles(files: Array<File>): Promise<void> {
     const mappedToGuessElement = files.map(f => ({name: f.name, payload: f}));
@@ -95,13 +107,20 @@ export class UploadComponent {
   }
 
   private buildFileMetadata(files: Array<TaggedElem<File>>): UploadMetadata {
-    const categories = ['uncategorized'];
-    const tags: Array<string> = [];
+    const categories = this.uploadMetadata?.categories ?? ['uncategorized'];
+    const tags: Array<string> = this.uploadMetadata?.tags ?? [];
+    const description: string = this.uploadMetadata?.description ?? '';
 
-    return files.reduce((accu, file) => {
-      accu[file.payload.name] = { tags: Array.from(new Set([...file.tags, ...tags])), categories };
+    const uploadFiles = files.reduce((accu, file) => {
+      accu[file.payload.name] = { tags: Array.from(new Set([...file.tags])), categories: [] };
       return accu;
     }, {} as any);
+    return {
+      categories,
+      tags,
+      description,
+      files: uploadFiles
+    };
   }
 
   private async buildUploadZip(files: Array<TaggedElem<File>>, metadata: UploadMetadata): Promise<any> {
@@ -118,6 +137,19 @@ export class UploadComponent {
     }, (updateMetadata) => {
       this.uploadProgress$$.next(updateMetadata.percent);
       this.uploadStep$$.next('Compressing ' + updateMetadata.currentFile);
+    });
+  }
+
+  public editMetadata(): void {
+    this.sheet = this.matBottomSheet.open(UploadEditSheetComponent, {
+      data: this.uploadMetadata
+    });
+    this.sheet.afterDismissed().pipe(
+      takeUntil(this.destroy$$)
+    ).subscribe((result) => {
+      if (result != null) {
+        this.uploadMetadata = result as UploadEditData;
+      }
     });
   }
 }

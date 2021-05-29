@@ -67,7 +67,7 @@ public class ImageImportService {
 
     private static boolean importImages(
             Optional<File> zipDir,
-            Optional<Map<String, UploadMetadata>> metadata,
+            Optional<UploadMetadata> metadata,
             ImageCrudService imageCrudService,
             String uuid
     ) {
@@ -76,37 +76,41 @@ public class ImageImportService {
         }
         var meta = metadata.get();
         var dir = zipDir.get();
+        var metaFiles = meta.getFiles();
 
+        ProgressService.reportProgress(metaFiles.size(), 0, 0, uuid);
 
-        ProgressService.reportProgress(meta.size(), 0, 0, uuid);
-
-        var imageCreates = meta.keySet().stream().map(key -> {
-            var value = meta.get(key);
+        var imageCreates = metaFiles.keySet().stream().map(key -> {
+            var value = metaFiles.get(key);
             var tagsForKey = value != null ? value.getTags() : new HashSet<String>();
             var categories = value != null ? value.getCategories() : new HashSet<String>();
+
+            tagsForKey.addAll(meta.getTags());
+            categories.addAll(meta.getCategories());
+
             var imageCreate = new ImageCreate();
             imageCreate.setTags(tagsForKey);
             imageCreate.setCategories(categories);
             imageCreate.setTitle(key);
             imageCreate.setName(UUID.randomUUID().toString());
             imageCreate.setType("image/webp");
+            imageCreate.setDescription(meta.getDescription());
             imageCreate.setImageFile(Optional.of(Paths.get(dir.getPath(), key).toFile()));
             return imageCreate;
         }).collect(Collectors.toList());
         imageCrudService.createImages(imageCreates, uuid);
-        ProgressService.reportProgress(meta.size(), meta.size(), 0, uuid);
+        // ProgressService.reportProgress(metaFiles.size(), metaFiles.size(), 0, uuid);
         return true;
     }
 
-    private static Optional<Map<String, UploadMetadata>> readMetadata(Optional<File> zipDir) {
+    private static Optional<UploadMetadata> readMetadata(Optional<File> zipDir) {
         if (zipDir.isEmpty()) {
             return Optional.empty();
         }
         try {
             var metadataFile = new File(Paths.get(zipDir.get().getPath(), "al-metadata.json").toString());
             var om = new ObjectMapper();
-            var typeRef = new TypeReference<HashMap<String, UploadMetadata>>() {};
-            var result = om.readValue(metadataFile, typeRef);
+            var result = om.readValue(metadataFile, UploadMetadata.class);
             return Optional.of(result);
         } catch (Exception e) {
             e.printStackTrace();

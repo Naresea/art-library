@@ -189,4 +189,12 @@ export class InfiniteImageGalleryComponent implements OnInit, AfterViewInit, OnD
       rawUrl: ImageService.getImageUrl(data, ImageSize.ORIGINAL)
     };
   }
+
+  public swapSrcForFullsize(img: HTMLImageElement, data: ImageGalleryData): void {
+    img.src = data.rawUrl;
+  }
+
+  public revertSrcToThumbnail(img: HTMLImageElement, data: ImageGalleryData): void {
+    img.src = data.medUrl;
+  }
 }

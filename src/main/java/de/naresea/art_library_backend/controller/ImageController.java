@@ -99,8 +99,12 @@ public class ImageController {
         return new ImageDto(img);
     }
 
-    @GetMapping(path = {"/{imageId}/bin/{size}"})
-    public void getBinaryContent(@PathVariable("imageId") Long imageId, @PathVariable("size") String size, HttpServletResponse response) throws IOException {
+    @GetMapping(path = {"/{imageId}/bin/{size}/{name}"})
+    public void getBinaryContent(
+            @PathVariable("imageId") Long imageId,
+            @PathVariable("size") String size,
+            @PathVariable("name") String name,
+            HttpServletResponse response) throws IOException {
         final Optional<ImageFile> retrievedImage = imageCrudService.readImage(imageId);
         if (retrievedImage.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);

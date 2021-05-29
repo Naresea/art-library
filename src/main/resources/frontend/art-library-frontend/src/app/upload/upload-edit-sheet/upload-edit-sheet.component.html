@@ -1,0 +1,32 @@
+<form>
+  <mat-list class="h-100">
+    <app-multiselect [options]="categories"
+                     [(selectedItems)]="selectedCategories"
+                     [placeholder]="'New Category'"
+                     [label]="'Categories'">
+    </app-multiselect>
+
+    <ng-container *ngIf="tags$ | async as tags">
+      <app-multiselect [options]="tags"
+                       [(selectedItems)]="selectedTags"
+                       [placeholder]="'New Tag'"
+                       [label]="'Tags'">
+      </app-multiselect>
+    </ng-container>
+
+    <div class="w-100 d-flex flex-column my-2">
+      <mat-label class="mt-2">Description</mat-label>
+      <editor name="imageDescription"
+              class="flex-grow-1"
+              [(ngModel)]="imageDescription"
+              [init]="editorConfig"
+      ></editor>
+    </div>
+
+    <div class="d-flex w-100 justify-content-around">
+      <button mat-raised-button color="warn" (tap)="close()">Cancel</button>
+      <button mat-raised-button color="primary" (tap)="save()">Save</button>
+    </div>
+
+  </mat-list>
+</form>

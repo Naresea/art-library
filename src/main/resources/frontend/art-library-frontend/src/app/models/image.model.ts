@@ -71,4 +71,6 @@ export enum ImageCategory {
 export interface UploadMetadata {
   tags: Array<string>;
   categories: Array<string>;
+  description: string;
+  files: Record<string, {tags: Array<string>, categories: Array<string>}>
 }

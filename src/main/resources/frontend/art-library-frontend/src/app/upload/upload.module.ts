@@ -17,6 +17,10 @@ import {MultiselectModule} from "../widgets/multiselect/multiselect.module";
 import {MatButtonModule} from "@angular/material/button";
 import { UploadToBackendComponent } from './upload-to-backend/upload-to-backend.component';
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import { UploadEditSheetComponent } from './upload-edit-sheet/upload-edit-sheet.component';
+import {EditorModule, TINYMCE_SCRIPT_SRC} from "@tinymce/tinymce-angular";
+import {FormsModule} from "@angular/forms";
+import {MatBottomSheetModule} from "@angular/material/bottom-sheet";
 
 
 @NgModule({
@@ -24,7 +28,8 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     UploadComponent,
     AddFilesComponent,
     FileTreeComponent,
-    UploadToBackendComponent
+    UploadToBackendComponent,
+    UploadEditSheetComponent
   ],
   imports: [
     CommonModule,
@@ -39,7 +44,13 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatFormFieldModule,
     MultiselectModule,
     MatButtonModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    EditorModule,
+    FormsModule,
+    MatBottomSheetModule
+  ],
+  providers: [
+    {provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js'}
   ]
 })
 export class UploadModule { }

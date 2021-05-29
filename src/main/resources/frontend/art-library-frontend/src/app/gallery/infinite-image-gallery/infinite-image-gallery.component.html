@@ -6,8 +6,8 @@
           <ng-container *ngIf="itemSize$ | async as size">
             <div class="p-2" [style.width.px]="size" [style.height.px]="size">
               <mat-card class="h-100 w-100 cursor-pointer" (tap)="imageSelected.emit(image)">
-                <mat-card-content>
-                  <img [src]="image.medUrl"/>
+                <mat-card-content class="w-100 h-100 d-flex align-items-center justify-content-center">
+                  <img #img (dragstart)="revertSrcToThumbnail(img, image)" (pointerup)="revertSrcToThumbnail(img, image)" (pointerdown)="swapSrcForFullsize(img, image)" class="h-100 w-100" style="object-fit: contain" [src]="image.medUrl"/>
                 </mat-card-content>
               </mat-card>
             </div>
