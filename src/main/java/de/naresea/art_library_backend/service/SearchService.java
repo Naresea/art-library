@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.naresea.art_library_backend.config.ArtLibraryConfig;
 import de.naresea.art_library_backend.model.search.SearchDocument;
 import de.naresea.art_library_backend.service.model.ElementPage;
+import lombok.RequiredArgsConstructor;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.*;
@@ -29,13 +30,15 @@ public class SearchService {
 
     private static final int MAX_RESULTS = 5_000;
 
+    private final ArtLibraryConfig config;
     private Analyzer analyzer;
     private IndexWriter writer;
     private DirectoryReader reader;
 
-    public SearchService() {
+    public SearchService(final ArtLibraryConfig config) {
+        this.config = config;
         try {
-            Directory directory = FSDirectory.open(Paths.get(ArtLibraryConfig.getSearchDirectory()));
+            Directory directory = FSDirectory.open(Paths.get(config.getSearchDirectory()));
             this.analyzer = new StandardAnalyzer();
             var indexWriterConfig = new IndexWriterConfig(this.analyzer);
             indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);

@@ -1,3 +1,9 @@
+art-library:
+  tmp-directory: "./tmp"
+  search-directory: "./search"
+  is-database-concurrent: true
+  num-import-threads: 4
+
 spring:
   servlet:
     multipart:
@@ -7,11 +13,15 @@ spring:
   jpa:
     hibernate:
       # use update to keep the database during start, use create-drop to empty the database during startup
-      ddl-auto: update
-      # ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+      # ddl-auto: update
+      ddl-auto: create-drop
+    # database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: de.naresea.art_library_backend.model.dialect.SQLiteDialect
   datasource:
-    url: "jdbc:postgresql://localhost:5432/art_library_backend"
+    # url: "jdbc:postgresql://localhost:5432/art_library_backend"
+    url: "jdbc:sqlite:sqlitesample.db"
+    driver-class-name: org.sqlite.JDBC
+
     username: art_library_backend
     password: hdr4Z%D3kSa-Edag
     initialization-mode: always

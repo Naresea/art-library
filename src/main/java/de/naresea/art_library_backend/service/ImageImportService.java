@@ -1,12 +1,11 @@
 package de.naresea.art_library_backend.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.naresea.art_library_backend.config.ArtLibraryConfig;
 import de.naresea.art_library_backend.service.model.ImageCreate;
 import de.naresea.art_library_backend.service.model.UploadMetadata;
+import lombok.RequiredArgsConstructor;
 import net.lingala.zip4j.ZipFile;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,35 +15,38 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class ImageImportService {
 
-    @Autowired
-    private ThreadpoolService threadpoolService;
+    private final ThreadpoolService threadpoolService;
 
-    @Autowired
-    private ImageCrudService imageCrudService;
+    private final ImageCrudService imageCrudService;
+
+    private final ArtLibraryConfig config;
 
     public String importMultipartImageZip(final MultipartFile multipartFile) {
         final var imageCrudService = this.imageCrudService;
         final var uuid = UUID.randomUUID().toString();
-        final var file = ImageImportService.writeMultipartToDisk(multipartFile, uuid);
-        final var zipDir = ImageImportService.extractZip(file, uuid);
+        final var file = this.writeMultipartToDisk(multipartFile, uuid);
+        final var zipDir = this.extractZip(file, uuid);
 
         this.threadpoolService.getExecutor().submit(() -> {
             var metadata = ImageImportService.readMetadata(zipDir);
             ImageImportService.importImages(zipDir, metadata, imageCrudService, uuid);
-            ImageImportService.deleteTempDir(uuid);
+            this.deleteTempDir(uuid);
         });
 
         return uuid;
     }
 
-    private static void deleteTempDir(String uuid) {
-        var tempDir = ArtLibraryConfig.getTempDirectory();
+    private void deleteTempDir(String uuid) {
+        var tempDir = this.config.getTmpDirectory();
         var extractPath = Paths.get(tempDir, uuid);
         var tempFile = new File(Paths.get(tempDir, uuid + ".tmp").toString());
         try {
@@ -99,7 +101,7 @@ public class ImageImportService {
             return imageCreate;
         }).collect(Collectors.toList());
         imageCrudService.createImages(imageCreates, uuid);
-        // ProgressService.reportProgress(metaFiles.size(), metaFiles.size(), 0, uuid);
+        ProgressService.reportProgress(metaFiles.size(), metaFiles.size(), 0, uuid);
         return true;
     }
 
@@ -118,12 +120,12 @@ public class ImageImportService {
         }
     }
 
-    private static Optional<File> extractZip(Optional<File> file, String uuid) {
+    private Optional<File> extractZip(Optional<File> file, String uuid) {
         if (file.isEmpty()) {
             return Optional.empty();
         }
         try {
-            var tempDir = ArtLibraryConfig.getTempDirectory();
+            var tempDir = this.config.getTmpDirectory();
             var extractPath = Paths.get(tempDir, uuid);
             Files.createDirectories(extractPath);
             var zipFile = new ZipFile(file.get());
@@ -135,9 +137,9 @@ public class ImageImportService {
         }
     }
 
-    private static Optional<File> writeMultipartToDisk(MultipartFile multipartFile, String uuid) {
+    private Optional<File> writeMultipartToDisk(MultipartFile multipartFile, String uuid) {
         try {
-            var tempDir = ArtLibraryConfig.getTempDirectory();
+            var tempDir = this.config.getTmpDirectory();
             Files.createDirectories(Paths.get(tempDir));
             var tempFile = new File(Paths.get(tempDir, uuid + ".tmp").toString());
             InputStream initialStream = multipartFile.getInputStream();

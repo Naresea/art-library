@@ -85,7 +85,12 @@ public class ImageCrudService {
         var failed = new AtomicInteger(0);
         var total = images.size();
 
-        var resultList = images.parallelStream()
+        var importParallel = false;
+        var stream = importParallel
+                ? images.parallelStream()
+                : images.stream();
+
+        var resultList = stream
                 .map(i -> {
                     var processData = this.processingService.processImage(i.getImageFile());
                     return this.getCreateImage(i, processData, tags, categories).orElse(null);
