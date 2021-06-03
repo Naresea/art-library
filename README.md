@@ -82,53 +82,30 @@ but that's not yet decided.
 
 ### Dependencies:
 
-- First, you need to install PostgreSQL in version 10+: https://www.postgresql.org/download/
-- Then, you will need a way to compile and run a Maven project. IntelliJ Community is free of charge and quite a nice IDE: https://www.jetbrains.com/idea/download/#section=windows
-- Finally, you will need NodeJS for the Angular frontend: https://nodejs.org/en/
+- You have to install both Apache Maven and a JDK to compile and start the backend server
+- You must have NodeJS version 14+ installed
 
-### Setup:
+### Setup
+- Install the required node_modules: ````npm i````
+- Choose one of these two options:
+  - Download a valid JDK for your Operating System and extract it to ``external/jdk-16.0.1``. This JRE will be bundled with your Electron App
+  - Edit ``electron/index.js`` and change the ``JAVA_CMD`` constant to just 'java' if you want to use your OS' java installation
 
-#### Database
+#### Compile the software to an electron app
+- Run ````npm run build````, this will compile the server, the frontend and tie everything together in an electron app
 
-- After all dependencies are installed, we will need a database and a user for PostgreSQL
-  You can run ``psql -U postgres`` from a terminal to connect to the installed database server.
-  These commands in order will create a database and a user for that database:
-```
-create database art_library_backend;
-create user art_library_backend with encrypted password 'mypass';
-grant all privileges on database art_library_backend to art_library_backend;
-```
-- If everything went alright ```\l``` will list the new database in the psql prompt
-- Under ``src/main/resources/application.yml`` you will find a default configuration already set up. Fill in the correct username and password (and maybe change the port if your database server is not running on the default port)
-- Still in the yml file, change the ``jpa.hibernate.ddl-auto`` property to 'create-drop', so the server will setup the database the way it needs to
+#### Compile the software for electron development
+- Run ````npm run build-server```` to compile, followed by ````npm run start.electron```` to start the software as electron app in dev mode
 
-That's the database. Next is compiling the frontend.
+#### Programming
+- Run ````npm run start.dev````. This will compile and start the backend server in SQLite mode and compile, start and watch the frontend
 
-#### Frontend
-- Under ``src/main/resources/frontend/art-library-frontend`` is the code for the angular frontend
-- In that directory, run "npm i", followed by "npm run build" to compile the frontend
-- Files should automatically be put into ``src/main/resources/public``, which is the directory Spring Boot will automatically deliver once it starts.
-  If the dist folder is for some reason *not* set to this path, please adjust the ``outputPath`` in the ``angular.json`` file
-
-#### Backend
-- Once the frontend is built, and the database is ready we can start the backend server: ``mvn spring-boot:run`` should do the trick.
-- Alternatively, you can configure IntelliJ Idea to run the server:
-  ![image](screenshots/run-config.JPG)
-
-#### Adding a local user to the database
-- The software currently performs a simple authentication querying a user from postgres.
-  To be able to login, you will need to create a user:
-
-````
-psql -U postgres
-\c art_library
-INSERT INTO library_user (id, username, password) VALUES (1, 'test', 'testPassword');
-````
-
-#### Testing it
-If you navigate to "localhost:8080" you should be prompted with a login screen and should be able to use the credentials you created above to authenticate. :)
-
-<b>Note: if everything works change the ddl-auto in application.yml back to "update" or the server will delete your database during every startup</b>
+#### Dedicated server
+- Edit ``spring-server/src/main/resources/application-dedicated.yml`` to use the correct config for your PostgreSQL database
+- Go into angular-frontend and compile the frontend (npm run build)
+- Copy the frontend from ``angular/frontend/dist`` into ``spring-server/src/main/resources/public``
+- Go into spring-server and compile the server with ``mvn clean package``
+- Go into spring-server/target and start the server with ``java -jar art-library-backend-1.0-SNAPSHOT.jar --spring.profiles.active=dedicated``
 
 ## Planned Features
 If I find the time...
@@ -142,6 +119,5 @@ If I find the time...
 - add a helper to build complex queries
 - add a special config option to explicitly sync the search index back with the database
 - include a dictionary when trying to auto-parse tags during upload (currently it's a regex that splits at whitespace, underscore, dash, etc.)
-- build some kind of installer to get the software ready in an easier way than compiling it from source
 - maybe include options for audio files as well... preview would be an audio player then, I guess
 - if I ever get here, built a module for Foundry VTT to integrate the Lucene search, gallery and upload directly into Foundry
